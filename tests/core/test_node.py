@@ -4,7 +4,7 @@ from core.operator import Operator
 
 class TestNodeMethods(unittest.TestCase):
     def setUp(self):
-        C = 0.8
+        C = 0.8 #CPU speed relative to cloud env.
         label = 'c.5.large'
         cpu = 2 #GHz
         self.node = Node(label, C) 
