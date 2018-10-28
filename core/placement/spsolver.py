@@ -5,7 +5,7 @@ from pprint import pprint
 
 class ShortestPathSolver(ABC):
     """
-    Finds the shortest path of length k from sorce u to destination v in a directed edge weighted graph.
+    Class used to find the shortest path of length k from sorce u to destination v in a directed edge weighted graph.
     """
     def __init__(self):
         pass 
@@ -20,7 +20,7 @@ class DPShortesPathSolver(ShortestPathSolver):
     @classmethod
     def shortest_path(cls, graph, source, dest, k):
         """
-         Returns shortest path for length from source to dest of length k. If no such path exists,
+         Returns shortest path from source to dest of length k. If no such path exist,
          the function returns sys.maxsize, [].
          Based on this implementation: https://www.geeksforgeeks.org/shortest-path-exactly-k-edges-directed-weighted-graph/ 
         """
@@ -28,9 +28,9 @@ class DPShortesPathSolver(ShortestPathSolver):
         #Table to memoize results from DP. memo_table[i][j][e] corresponds to the shortest path 
         # between node i and node j of length e
         memo_table = [[[maxsize for k in range(k+1)] for j in range(V)] for i in range(V)]
-
         #Tabled used to reconstruct the path 
         path = [[[[] for k in range(k+1)] for j in range(V)] for i in range(V)] 
+        
         #Loop for num edges from 0 to k 
         for e in range(k+1):
             #for source
@@ -46,15 +46,17 @@ class DPShortesPathSolver(ShortestPathSolver):
                         path[s][d][e] = [s,d] 
 
                     if e > 1:
-                        #Loop over each neighbors of s
+                        #Loop over ever neighbor of s
                         for nbr in graph.neighbors(s):
                             if nbr != d and memo_table[nbr][d][e-1] != maxsize:
-                                
                                 if memo_table[s][d][e] > graph[s][nbr][0]['weight'] + memo_table[nbr][d][e-1]:
                                     memo_table[s][d][e] = graph[s][nbr][0]['weight'] + memo_table[nbr][d][e-1] 
                                     path[s][d][e] = [s] + path[nbr][d][e-1]
         
-        return memo_table[source][dest][k], path[source][dest][k]
+        if (memo_table[source][dest][k] != maxsize):
+            return memo_table[source][dest][k], path[source][dest][k]
+        else:
+            return maxsize, []
 
 
 
