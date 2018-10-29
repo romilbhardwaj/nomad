@@ -1,0 +1,1 @@
+K8S_LABELS_OPGUID= "op_guid"
