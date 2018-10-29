@@ -16,7 +16,7 @@ class ShortestPathSolver(ABC):
         pass
 
 
-class DPShortesPathSolver(ShortestPathSolver):
+class DPShortestPathSolver(ShortestPathSolver):
     @classmethod
     def shortest_path(cls, graph, source, dest, k):
         """
@@ -24,6 +24,7 @@ class DPShortesPathSolver(ShortestPathSolver):
          the function returns sys.maxsize, [].
          Based on this implementation: https://www.geeksforgeeks.org/shortest-path-exactly-k-edges-directed-weighted-graph/ 
         """
+        #TODO: test implementation more extensively
         V = graph.number_of_nodes()
         #Table to memoize results from DP. memo_table[i][j][e] corresponds to the shortest path 
         # between node i and node j of length e
