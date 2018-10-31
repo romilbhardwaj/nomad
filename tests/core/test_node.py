@@ -11,7 +11,7 @@ class TestNodeMethods(unittest.TestCase):
 
     def test_processing_time(self):
         label = 'resampling'
-        cloud_execution_time = 5 #seconds
+        cloud_execution_time = 5000 #milliseconds
         output_msg_size = 1000 #Kb - kilobytes
         operator = Operator(label, cloud_execution_time, output_msg_size)
         processing_time = 6.25
@@ -20,7 +20,5 @@ class TestNodeMethods(unittest.TestCase):
     def test_to_sting(self):
         pass 
         
-    
-
 if __name__ == '__main__':
     unittest.main()        
