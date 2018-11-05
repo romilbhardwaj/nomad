@@ -1,10 +1,9 @@
 class Link:
     def __init__(self, b, l):
-        self._bandwidth = b #Mega bits/second(Mb/s)
-        self._latency = l   #milliseconds(ms)
+        self._bandwidth = b # bytes/second(Mb/s)
+        self._latency = l   # seconds(ms)
     
-    def transfer_time(self, bits):
-        """Calculates the transfer time in milliseconds for a given number of bits (ms)"""
+    def transfer_time(self, bytes):
+        """Calculates the transfer time in milliseconds for a given number of bytes (ms)"""
     
-        return bits / (self._bandwidth * pow(10,3)) + self._latency  
-    
+        return bytes / self._bandwidth + self._latency

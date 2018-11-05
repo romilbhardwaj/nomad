@@ -32,7 +32,7 @@ class RecMinLatencySolver(MinLatencySolver):
                 return latency, placement
             else:
                 #no feasible placement
-                maxsize, []
+                return maxsize, []
 
         #Base case 2: Placeing 2 operators.
         if k == 1:
@@ -58,7 +58,8 @@ class RecMinLatencySolver(MinLatencySolver):
             op0 = operators[0]
             processing_time_src = self._processing_time(source, op0)
             #increment number of operators at source
-            self._get_node(source).add_operator()
+            #TODO: Wouldn't this update operators permanently, even though we might pick another path? Commenting out for now.
+            # self._get_node(source).add_operator()
 
             #Loop over all neighbors 
             min_placement_latency, opt_placement = maxsize, []
@@ -88,4 +89,7 @@ class RecMinLatencySolver(MinLatencySolver):
         return self._get_node(vertex).processing_time(operator)
     
     def _transfer_time(self, start, end, bits):
+        # Self loop condition
+        if start == end:
+            return 0
         return self._get_link(start, end).transfer_time(bits)
