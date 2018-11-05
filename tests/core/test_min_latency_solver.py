@@ -9,26 +9,26 @@ class TestMinLatencySolverMethods(unittest.TestCase):
     def setUp(self):
         self.links = {
             (0,1): {
-                'bw': 5, #Mb/s
-                'lat': 50 #ms
+                'bw': 5, #B/s
+                'lat': 0.050 #s
             }, 
             (0,2): {
-                'bw': 20, #Mb/s
-                'lat': 50 #ms
+                'bw': 100, #B/s
+                'lat': 0.050 #s
             },
             (0,3): {
-                'bw': 50, #Mb/s
-                'lat': 50 #ms
+                'bw': 50, #B/s
+                'lat': 0.050 #s
             },
 
             (1, 3): {
-                'bw': 10, #Mb/s
-                'lat': 50 #ms
+                'bw': 10, #B/s
+                'lat': 0.050 #ms
             }, 
 
             (2, 3): {
-                'bw': 20, #Mb/s
-                'lat': 50 #ms
+                'bw': 50, #B/s
+                'lat': 0.050 #ms
             }
         }
 
@@ -57,23 +57,23 @@ class TestMinLatencySolverMethods(unittest.TestCase):
         self.pipeline_info = [
             {
                 'label': 'Pre processing',
-                'cloud_execution_time': 10000, #ms
-                'output_msg_size': 100000, #Kilobytes,
+                'cloud_execution_time': 10, #s
+                'output_msg_size': 100, #bytes,
             },
             {
                 'label': 'Resampling',
-                'cloud_execution_time': 5000, #ms
-                'output_msg_size': 5000, #Kilobytes,
+                'cloud_execution_time': 5, #s
+                'output_msg_size': 5, #bytes,
             },
 
             {
                 'label': 'Inference',
-                'cloud_execution_time': 1000, #ms
-                'output_msg_size': 1, #Kilobytes
+                'cloud_execution_time': 1, #s
+                'output_msg_size': 1, #bytes
             }
         ]
 
-        self.g1 = nx.read_weighted_edgelist('tests/test_graph_3.txt', create_using=nx.MultiDiGraph, nodetype=int)
+        self.g1 = nx.read_weighted_edgelist('../test_graph_3.txt', create_using=nx.MultiDiGraph, nodetype=int)
         #Add links:
         #curr_link = self.links[(0,1)]
         #self.g1[0][1][0]['link'] = Link(curr_link['bw'], curr_link['lat'])
@@ -111,7 +111,7 @@ class TestMinLatencySolverMethods(unittest.TestCase):
         total_latency = 2
         solver = RecMinLatencySolver(self.g1)
         (total_latency, placement) = solver.find_optimal_placement(u, v, self.operator_list)
-        print('seconds:',total_latency / pow(10, 3), placement)
+        print('seconds:',total_latency, placement)
 
 
 if __name__ == '__main__':
