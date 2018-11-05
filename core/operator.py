@@ -9,5 +9,5 @@ class Operator:
     def cloud_execution_time(self):
         return self._cloud_execution_time
     
-    def msg_size_bits(self):
-        return self._output_msg_size * pow(10, 3) * 8
+    def msg_size_bytes(self):
+        return self._output_msg_size
