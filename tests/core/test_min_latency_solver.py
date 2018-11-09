@@ -3,7 +3,7 @@ import networkx as nx
 from core.placement.minlatsolver import RecMinLatencySolver 
 from core.graph.link import Link
 from core.graph.node import Node
-from core.operator import Operator
+from core.types.operator import Operator
 
 class TestMinLatencySolverMethods(unittest.TestCase):
     def setUp(self):
@@ -23,12 +23,12 @@ class TestMinLatencySolverMethods(unittest.TestCase):
 
             (1, 3): {
                 'bw': 10, #B/s
-                'lat': 0.050 #s
+                'lat': 0.050 #ms
             }, 
 
             (2, 3): {
                 'bw': 50, #B/s
-                'lat': 0.050 #s
+                'lat': 0.050 #ms
             }
         }
 
@@ -73,7 +73,7 @@ class TestMinLatencySolverMethods(unittest.TestCase):
             }
         ]
 
-        self.g1 = nx.read_weighted_edgelist('tests/test_graph_3.txt', create_using=nx.MultiDiGraph, nodetype=int)
+        self.g1 = nx.read_weighted_edgelist('../test_graph_3.txt', create_using=nx.MultiDiGraph, nodetype=int)
         #Add links:
         #curr_link = self.links[(0,1)]
         #self.g1[0][1][0]['link'] = Link(curr_link['bw'], curr_link['lat'])
@@ -110,9 +110,8 @@ class TestMinLatencySolverMethods(unittest.TestCase):
         k = len(self.pipeline_info) - 1 
         total_latency = 2
         solver = RecMinLatencySolver(self.g1)
-        (total_latency, placement, operator_distribution) = solver.find_optimal_placement(u, v, self.operator_list)
-        print('Seconds:',total_latency, placement)
-        print(operator_distribution)
+        (total_latency, placement) = solver.find_optimal_placement(u, v, self.operator_list)
+        print('seconds:',total_latency, placement)
 
 
 if __name__ == '__main__':
