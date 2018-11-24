@@ -1,0 +1,5 @@
+id, label, C
+0, edge_device, 0.2,
+1, cloud, 1.0,
+2, base station, 0.7,
+3, laptop, 0.4
