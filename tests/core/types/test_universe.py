@@ -2,10 +2,10 @@ import unittest
 from core.universe.universe import Universe
 class TestUniverseMethods(unittest.TestCase):
     def setUp(self):
-        self.node_info = open("tests/types/nodes.csv")
-        self.link_info = open('tests/types/links.csv')
-        self.pipeline_info = open('tests/types/pipeline.csv')
-        self.graph_topo = open('tests/types/graph_topology.txt')
+        self.node_info = open("tests/core/types/nodes.json")
+        self.link_info = open('tests/core/types/links.json')
+        self.pipeline_info = open('tests/core/types/pipeline.json')
+        self.graph_topo = open('tests/core/types/graph_topology.txt')
 
     def tearDown(self):
         self.node_info.close()
