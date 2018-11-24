@@ -1,0 +1,5 @@
+DEFAULT_LOG_DIR = '/nomad/log'
+MASTER_LOG_FILE_NAME = 'nomad_master.log'
+
+RPC_DEFAULT_PORT = 20000
+RPC_INIT_WAIT_INTERVAL = 5

@@ -7,9 +7,10 @@ import sys
 from queue import Queue
 
 import dill
+from core.config import CONSTANTS
 
 from nomad.core.utils.LoggerWriter import LoggerWriter
-from nomad.utils.RPCServerThreads import RPCServerThread
+from nomad.core.utils.RPCServerThreads import RPCServerThread
 import nomad.core.config.ClientConfig as ClientConfig
 
 # ====== BEGIN SETUP LOGGING =========
@@ -72,7 +73,7 @@ class NomadClient(object):
         def run(self):
             self.work()
 
-    def __init__(self, guid, manager_rpc_uri, operator_path=None):
+    def __init__(self, guid, manager_rpc_uri, operator_path=None, client_rpc_port=None):
         '''
         :param guid: GUID for this client
         :type guid: str
@@ -80,15 +81,26 @@ class NomadClient(object):
         :type manager_rpc_uri: str
         :param operator_path: path to the dill file of the operator
         :type operator_path: str
+        :param client_rpc_port: RPC port of the client
+        :type client_rpc_port: int
         '''
         self.guid = guid
         self.manager_rpc_uri = manager_rpc_uri
-        if self.operator_path is None:
+        if operator_path is None:
             self.operator_path = ClientConfig.DEAFULT_OPERATOR_DILL_PATH
         else:
             self.operator_path = operator_path
 
-        self.operator = self._load_operator(self.operator_path)
+        if client_rpc_port is None:
+            self.client_rpc_port = ClientConfig.RPC_DEFAULT_PORT
+        else:
+            if isinstance(client_rpc_port, int) and (client_rpc_port < CONSTANTS.MAX_PORT_NUM) and (client_rpc_port > CONSTANTS.MIN_PORT_NUM):
+                self.client_rpc_port = ClientConfig.RPC_DEFAULT_PORT
+            else:
+                raise TypeError("RPC Port must be int between %d and %d" % (CONSTANTS.MIN_PORT_NUM, CONSTANTS.MAX_PORT_NUM))
+
+
+        self.operator_func = self._load_operator(self.operator_path)
 
         self.incoming_queue = Queue(maxsize=ClientConfig.MAX_INCOMING_QUEUE_SIZE)
         self.outgoing_queue = Queue(maxsize=ClientConfig.MAX_OUTGOING_QUEUE_SIZE)
@@ -104,7 +116,7 @@ class NomadClient(object):
 
         # Init RPC Server
         methods_to_register = [self.submit_message]
-        self.rpcserver = RPCServerThread(methods_to_register, self.client_rpc_address, self.client_rpc_port, multithreaded=False)
+        self.rpcserver = RPCServerThread(methods_to_register, self.client_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
         # Test if RPC server is alive. Wait if it isn't.
