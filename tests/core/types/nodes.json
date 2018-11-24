@@ -1,5 +1,23 @@
-id, label, C
-0, edge_device, 0.2,
-1, cloud, 1.0,
-2, base station, 0.7,
-3, laptop, 0.4
+[
+        {
+          "id": 0,
+          "label": "edge_device",
+          "C": 0.2
+        },
+        {
+          "id": 1,
+          "label": "cloud",
+          "C": 1.0
+        },
+        {
+          "id": 2,
+          "label": "base_station",
+          "C": 0.7
+        },
+        {
+          "id": 3,
+          "label": "laptop",
+          "C": 0.4
+        }
+]
+

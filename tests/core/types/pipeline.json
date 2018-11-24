@@ -1,4 +1,23 @@
-id, label, order, reference_execution_time, output_msg_size,
-0, Pre Processing, 0, 10, 100,
-1, Resampling, 1, 5, 5,
-2, inference, 2, 1, 1
+[
+{
+        "id": 0,
+        "label": "pre_processing",
+        "order": 0,
+        "ref_exec_time": 10,
+        "output_msg_size": 100
+},
+{
+        "id": 1,
+        "label": "resampling",
+        "order": 1,
+        "ref_exec_time": 5,
+        "output_msg_size": 5
+},
+{
+        "id": 2,
+        "label": "inference",
+        "order": 2,
+        "ref_exec_time": 1,
+        "output_msg_size": 1
+}
+]
