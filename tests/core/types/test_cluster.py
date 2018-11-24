@@ -1,21 +1,19 @@
 import unittest
-from core.universe.cluster import Cluster
+from core.types.cluster import Cluster
 class TestClusterMethods(unittest.TestCase):
     def setUp(self):
-        self.node_info = open("tests/types/nodes.csv")
-        self.link_info = open('tests/types/links.csv')
-        self.pipeline_info = open('tests/types/pipeline.csv')
-        self.graph_topo = open('tests/types/graph_topology.txt')
+        self.node_info = open("tests/core/types/nodes.json")
+        self.link_info = open('tests/core/types/links.json')
+        self.graph_topo = open('tests/core/types/graph_topology.txt')
 
     def tearDown(self):
         self.node_info.close()
         self.link_info.close()
-        self.pipeline_info.close()
         self.graph_topo.close()
 
     def test_create_universe(self):
-        universe = Universe.create_universe(self.node_info, self.link_info,  self.graph_topo)
-        self.assertTrue(universe.cluster != None)
+        cluster = Cluster.read_cluster_spec('tests/core/types/nodes.json','tests/core/types/links.json', 'tests/core/types/graph_topology.txt')
+        self.assertTrue(cluster.nodes != None)
 
 
 if __name__ == '__main__':
