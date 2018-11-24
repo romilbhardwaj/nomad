@@ -1,0 +1,37 @@
+[
+{
+        "from": 0,
+        "to": 1,
+        "bandwidth": 5,
+        "latency": 0.05
+
+},
+{
+        "from": 0,
+        "to": 3,
+        "bandwidth": 50,
+        "latency": 0.05
+
+},
+{
+        "from": 0,
+        "to": 2,
+        "bandwidth": 100,
+        "latency": 0.05
+
+},
+{
+        "from": 1,
+        "to": 3,
+        "bandwidth": 10,
+        "latency": 0.05
+
+},
+{
+        "from": 2,
+        "to": 3,
+        "bandwidth": 50,
+        "latency": 0.05
+
+}
+]
