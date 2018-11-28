@@ -7,7 +7,7 @@ import sys
 from queue import Queue
 
 import dill
-from core.config import CONSTANTS
+from nomad.core.config import CONSTANTS
 
 from nomad.core.utils.LoggerWriter import LoggerWriter
 from nomad.core.utils.RPCServerThreads import RPCServerThread
@@ -73,19 +73,19 @@ class NomadClient(object):
         def run(self):
             self.work()
 
-    def __init__(self, guid, manager_rpc_uri, operator_path=None, client_rpc_port=None):
+    def __init__(self, guid, master_rpc_uri, operator_path=None, client_rpc_port=None):
         '''
         :param guid: GUID for this client
         :type guid: str
-        :param manager_rpc_uri: RPC URI for the manager
-        :type manager_rpc_uri: str
+        :param master_rpc_uri: RPC URI for the master
+        :type master_rpc_uri: str
         :param operator_path: path to the dill file of the operator
         :type operator_path: str
         :param client_rpc_port: RPC port of the client
         :type client_rpc_port: int
         '''
         self.guid = guid
-        self.manager_rpc_uri = manager_rpc_uri
+        self.master_rpc_uri = master_rpc_uri
         if operator_path is None:
             self.operator_path = ClientConfig.DEAFULT_OPERATOR_DILL_PATH
         else:
@@ -105,7 +105,7 @@ class NomadClient(object):
         self.incoming_queue = Queue(maxsize=ClientConfig.MAX_INCOMING_QUEUE_SIZE)
         self.outgoing_queue = Queue(maxsize=ClientConfig.MAX_OUTGOING_QUEUE_SIZE)
 
-        # Setup manager RPCProxy
+        # Setup master RPCProxy
         self.standalone_mode = False    # When no server uri specified.
         try:
             self.master_rpc_proxy = xmlrpc.client.ServerProxy(self.master_rpc_uri, allow_none=True)
@@ -136,8 +136,8 @@ class NomadClient(object):
         self.opreator_thread = self.OperatorThread(self.incoming_queue, self.outgoing_queue, self.operator_func)
         self.opreator_thread.start()
 
-        self.forwarding_thread = self.ForwardingThread(self.outgoing_queue)
-        self.forwarding_thread.start()
+        # self.forwarding_thread = self.ForwardingThread(self.outgoing_queue, self.next_op_addr)
+        # self.forwarding_thread.start()
 
     def test_self_rpcserver(self):
         uri = "http://localhost:%d" % int(self.client_rpc_port)
@@ -150,11 +150,12 @@ class NomadClient(object):
 
     def notify_server_onalive(self):
         self.master_rpc_proxy.register_client_onalive(self.guid)
-        logger.info("Registered client with GUID %s on the master." % str(self.client_info.gpus_allocated))
 
     def submit_message(self, message):
         self.incoming_queue.append(message)
 
     @staticmethod
     def _load_operator(operator_path):
-        return dill.load(operator_path)
+        with open(operator_path, "rb") as op_file:
+            op = dill.load(op_file)
+        return op

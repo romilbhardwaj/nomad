@@ -1,4 +1,4 @@
-from core.types.cluster import Cluster
+from nomad.core.types.cluster import Cluster
 
 class Universe(object):
     def __init__(self, cluster):

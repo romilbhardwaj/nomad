@@ -1,7 +1,7 @@
 import networkx as nx
 import  json
-from core.graph.node import Node
-from core.graph.link import Link
+from nomad.core.graph.node import Node
+from nomad.core.graph.link import Link
 
 class Cluster(object):
     def __init__(self, nodes, links, graph):
