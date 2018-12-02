@@ -17,7 +17,7 @@ class LocalStackTraceHandler(SimpleXMLRPCRequestHandler):
              raise
 
 class RPCServerThread(threading.Thread):
-    def __init__(self, methods_to_register, rpc_address, rpc_port, multithreaded=True):
+    def __init__(self, methods_to_register, rpc_port, rpc_address="", multithreaded=True):
         threading.Thread.__init__(self)
         self.daemon = False
         self.stoprequest = threading.Event()
