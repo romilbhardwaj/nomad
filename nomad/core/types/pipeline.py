@@ -13,3 +13,12 @@ class Pipeline(object):
         self.operator_instances = []    #populated by master (type: OperatorInstance)
         self.start_node = start_node
         self.end_node = end_node
+
+
+    def set_operator_instances(self, op_instances):
+        """
+        :param op_instances:
+        :type op_instances list of operator instance ids
+        :return:
+        """
+        self.operator_instances = op_instances

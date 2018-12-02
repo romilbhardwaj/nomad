@@ -61,7 +61,7 @@ class RecMinLatencySolver(MinLatencySolver):
                     latency = self._processing_time(source, op0, ops_dist_copy[source]) + self._processing_time(dest, op1, ops_dist_copy[dest])
                 else:
                     #cost executing op0 at source + cost of sending output of op0 to dest + cost executing op1 at dest
-                    latency = self._processing_time(source, op0, ops_dist_copy[source]) + self._transfer_time(source, dest, op0.msg_size_bytes()) + self._processing_time(dest, op1, ops_dist_copy[dest])
+                    latency = self._processing_time(source, op0, ops_dist_copy[source]) + self._transfer_time(source, dest, op0.msg_size_bits()) + self._processing_time(dest, op1, ops_dist_copy[dest])
 
                 placement = [source, dest]
                 return latency, placement, ops_dist_copy
@@ -90,7 +90,7 @@ class RecMinLatencySolver(MinLatencySolver):
                 if nbr == source:
                     total_latency = self._processing_time(source, op0, nbr_ops_dist[source]) + nbr_latency
                 else:
-                    total_latency = self._processing_time(source, op0, nbr_ops_dist[source]) + self._transfer_time(source, nbr, op0.msg_size_bytes()) + nbr_latency
+                    total_latency = self._processing_time(source, op0, nbr_ops_dist[source]) + self._transfer_time(source, nbr, op0.msg_size_bits()) + nbr_latency
 
                 # Check if we have found a less expensive placement
                 if (total_latency < min_latency):

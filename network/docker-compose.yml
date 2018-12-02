@@ -1,0 +1,30 @@
+version: "3"
+services:
+  iperf3-server:
+    # replace username/repo:tag with your name and image details
+    image: networkstatic/iperf3:latest
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    command: -s
+    ports:
+      - "5201:5201"
+    networks:
+      - iperfnet
+  #iperf3-client:
+    # replace username/repo:tag with your name and image details
+  #  image: networkstatic/iperf3:latest
+  #  deploy:
+  #    replicas: 1
+  #    restart_policy:
+  #      condition: on-failure
+
+  #  depends_on:
+  #    - iperf3-server
+  #  ports:
+  #  - "5201:5201"
+  #  networks:
+  #  - iperfnet
+networks:
+  iperfnet:
