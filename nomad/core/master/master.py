@@ -66,6 +66,13 @@ class Master(object):
         logging.info("Client %s requested next op address, returning %s" % (guid, next_op_addr))
         return next_op_addr
 
+    def submit_pipeline(self, fns, start_node, end_node):
+        self.universe.add_pipline(pipeline)
+        self.profile_pipeline(pipeline)
+        scheduling_result = self.scheduler.schedule(pipeline)
+        self.universe.save_scheduling_decision(scheduling_result)
+        self.instantiate_pipeline(pipeline)
+
     # def profile_cluster():
     #     create_profiling_containers()
     #     wait_for_profiling_completion()
@@ -81,12 +88,7 @@ class Master(object):
     # def wait_for_profiling_completion(self):
     #     pass
     #
-    # def submit_pipeline(self, pipeline):
-    #     self.universe.add_pipline(pipeline)
-    #     self.profile_pipeline(pipeline)
-    #     scheduling_result = self.scheduler.schedule(pipeline)
-    #     self.universe.save_scheduling_decision(scheduling_result)
-    #     self.instantiate_pipeline(pipeline)
+
     #
     # def profile_pipeline(self, pipeline):
     #     create_pipeline_profiling_containers()
