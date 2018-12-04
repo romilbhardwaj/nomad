@@ -1,5 +1,5 @@
 class Pipeline(object):
-    def __init__(self, operators, start_node, end_node):
+    def __init__(self, guid, operators, start_node, end_node):
         '''
 
         :param operators:
@@ -9,6 +9,7 @@ class Pipeline(object):
         :param end_node:
         :type end_node: guid str
         '''
+        self.guid = guid
         self.operators = operators
         self.operator_instances = []    #populated by master (type: OperatorInstance)
         self.start_node = start_node
