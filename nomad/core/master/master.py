@@ -9,6 +9,7 @@ from queue import Queue
 import dill
 from nomad.core.config import CONSTANTS
 from nomad.core.placement.minlatsolver import RecMinLatencySolver
+from nomad.core.types.operator import OperatorInstance
 from nomad.core.universe.universe import Universe
 
 from nomad.core.utils.LoggerWriter import LoggerWriter
@@ -39,8 +40,11 @@ logger.addHandler(consoleHandler)
 # ======= LOGGER SETUP DONE =========
 
 class Master(object):
-    def __init__(self, universe, master_rpc_port=None):
-        self.universe = universe
+    def __init__(self, master_rpc_port=None):
+        self.universe = Universe()
+
+        # Setting up the universe
+        self.universe_setup()
 
         if master_rpc_port is None:
             self.master_rpc_port = MasterConfig.RPC_DEFAULT_PORT
@@ -57,9 +61,23 @@ class Master(object):
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
-        self.scheduler = RecMinLatencySolver(universe.get_graph())
+        self.scheduler = RecMinLatencySolver(self.universe.get_graph())
 
-        # profile_cluster()
+    def universe_setup(self):
+        '''
+        Static profiles the cluster and updates the universe with the cluster and the profiling values.
+        '''
+        node_list_from_kubernetes = kubernetesAPI.get_nodes()  # List of str
+        self.universe.create_cluster(node_list_from_kubernetes)
+        node_profiling_info, link_profiling_info = self.profile_cluster(self.universe.cluster) # Dict of {'node_id': {'C': int}}
+        self.universe.update_network_profiling(link_profiling_info)
+        self.universe.update_node_profiling(node_profiling_info)
+
+    def profile_cluster(self, cluster):
+        node_profiling_info = {}    # Dict of {'node_id': {'C': int}}
+        link_profiling_info = {}    # List of link objects [Link()..]
+        # Replace with reading from file.
+        return node_profiling_info, link_profiling_info
 
     def register_client_onalive(self, guid):
         logging.info("Client %s registered." % guid)
@@ -72,7 +90,7 @@ class Master(object):
     def submit_network_profiling(self, network_profiling_info):
         self.universe.update_network_profiling(network_profiling_info)
 
-    def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
+    def submit_pipeline_profiling(self, pid, pipelinne_profiling_info):
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
     def submit_pipeline(self, fns, start, end):
@@ -86,11 +104,22 @@ class Master(object):
     def schedule(self, pipeline_id):
         pipeline = self.universe.get_pipeline(pipeline_id)
         start, end = pipeline.start_node, pipeline.end_node
-        operators = [self.universe.get_operator(oid) for oid in pipeline.operators]
+        oid_list = [oid for oid in pipeline.operators]
+        operators = [self.universe.get_operator(oid) for oid in oid_list]
         #run scheduler
         latency, placement, distribution = self.scheduler.find_optimal_placement(start, end, operators)
-        #create opertor instances
-        print(placement)
+
+        # Create OperatorInstances
+        op_inst_guids = []
+        for i in range(0, len(oid_list)):
+            guid = self.generate_guid()
+            op_inst_guids.append(guid)
+            operator_instance = OperatorInstance(guid=self.universe.generate_guid(), node_id=placement[i], operator_id=oid_list[i])
+            self.universe.add_operator_instance(operator_instance)
+
+        #update the pipeline with the operator instance
+        pipeline.set_operator_instances(op_inst_guids)
+        logger.info("The placement decision is %s" % str(placement))
 
     def profile_pipeline(self, pipeline):
         #create_pipeline_profiling_containers()
@@ -131,5 +160,4 @@ class Master(object):
 
 
 if __name__ == '__main__':
-    universe = Universe(None)  # And god said, let there be light
-    master = Master(universe)
+    master = Master()

@@ -1,10 +1,12 @@
-from core.types.cluster import Cluster
-from core.types.operator import Operator
-from core.types.pipeline import Pipeline
+import uuid
+
+from nomad.core.types.cluster import Cluster
+from nomad.core.types.operator import Operator
+from nomad.core.types.pipeline import Pipeline
 
 
 class Universe(object):
-    def __init__(self, cluster):
+    def __init__(self):
         """
 
         :param cluster: The cluster info
@@ -14,7 +16,7 @@ class Universe(object):
         self.pipelines = {}
         self.operators  = {}
         self.operator_instances = {}
-        self.cluster = cluster
+        self.cluster = None
 
     def get_next_operator(self, client_guid):
         for id, pipeline in self.pipelines.items():
@@ -24,6 +26,10 @@ class Universe(object):
                     next_operator_instance = pipeline.operator_instance[pipeline.operators.index(operator_to_find) + 1]  # Assuming ordering on operator_instance is the same as operators
                     return next_operator_instance
         raise Exception("No next operator.")
+
+    @staticmethod
+    def generate_guid():
+        return uuid.uuid4()
 
     @classmethod
     def create_universe(cls, node_file, links_file, graph_topo_file):
@@ -54,6 +60,16 @@ class Universe(object):
         self.pipelines[pid] = pipeline
 
         return pid
+
+    def add_operator_instance(self, op_instance):
+        '''
+        Adds an operator instance to the universe
+        :param op_instance:
+        :type op_instance: OperatorInstance object
+        :return:
+        :rtype:
+        '''
+        raise NotImplementedError()
 
     def get_pipeline(self, id):
         return self.pipelines[id]
@@ -86,4 +102,21 @@ class Universe(object):
             operator.set_output_msg_size(operator_profile['output_msg_size'])
 
 
+    def create_cluster(self, node_list_from_kuberenetes):
+        self.cluster = Cluster.create_cluster(node_list_from_kuberenetes)
 
+    def update_network_profiling(self, link_profiling_info):
+        '''
+
+        :param link_profiling_info:
+        :type link_profiling_info: List of link objects [Link()..]
+        '''
+        self.cluster.update_links(link_profiling_info)
+
+    def update_node_profiling(self, node_profiling_info):
+        '''
+
+        :param node_profiling_info:
+        :type node_profiling_info: Dict of {'node_id': {'C': int}}
+        '''
+        self.cluster.update_nodes(node_profiling_info)
