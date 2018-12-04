@@ -1,7 +1,7 @@
 import uuid
 
 from nomad.core.types.cluster import Cluster
-from nomad.core.types.operator import Operator
+from nomad.core.types.operator import Operator, OperatorInstance
 from nomad.core.types.pipeline import Pipeline
 
 
@@ -69,13 +69,16 @@ class Universe(object):
         :return:
         :rtype:
         '''
-        raise NotImplementedError()
+        self.operator_instances[op_instance.guid] = op_instance
 
-    def get_pipeline(self, id):
-        return self.pipelines[id]
+    def get_pipeline(self, guid):
+        return self.pipelines[guid]
 
-    def get_operator(self, oid):
-        return self.operators[oid]
+    def get_operator(self, guid):
+        return self.operators[guid]
+
+    def get_operator_instance(self, guid):
+        return self.operator_instances[guid]
 
     def get_graph(self):
         """Returns the network graph"""
@@ -102,8 +105,19 @@ class Universe(object):
             operator.set_output_msg_size(operator_profile['output_msg_size'])
 
 
-    def create_cluster(self, node_list_from_kuberenetes):
-        self.cluster = Cluster.create_cluster(node_list_from_kuberenetes)
+    def create_cluster(self, node_list_from_kubernetes):
+        self.cluster = Cluster.create_cluster(node_list_from_kubernetes)
+
+    def create_and_append_operator_instance(self, pipeline_guid, operator_guid, **kwargs):
+        '''
+        Creates an operator instance with the provided args and kwargs, appends its to the parent operator and returns the object
+        '''
+        operator = self.get_operator(operator_guid)
+        op_inst_guid = operator.get_op_inst_guid()  # Get a GUID for the operator instance
+        op_inst = OperatorInstance(op_inst_guid, pipeline_guid, operator_guid, **kwargs) # Create the instance
+        operator.append_op_instance(op_inst_guid)
+        self.add_operator_instance(op_inst)
+        return op_inst
 
     def update_network_profiling(self, link_profiling_info):
         '''

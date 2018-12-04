@@ -2,6 +2,8 @@
 import json
 import logging
 
+import nomad.core.config.KubernetesConfig
+
 from ..config import CONSTANTS
 from ..config import SchedulerConfig
 
@@ -67,10 +69,11 @@ class KubernetesManager(object):
                 if event['object'].status.phase == "Pending" and event['object'].spec.node_name == None and event['object'].spec.scheduler_name == self.scheduler_name:
                     try:
                         logger.info("Trying to schedule k8s object %s" % event['object'].metadata.name)
-                        if CONSTANTS.K8S_LABELS_OPGUID not in event['object'].metadata.labels:
-                            logger.warning("Unable to schedule object %s without metadata label %s. Continuing.." % (event['object'].metadata.name, CONSTANTS.K8S_LABELS_OPGUID))
+                        if nomad.core.config.KubernetesConfig.K8S_LABELS_OPGUID not in event['object'].metadata.labels:
+                            logger.warning("Unable to schedule object %s without metadata label %s. Continuing.." % (event['object'].metadata.name,
+                                                                                                                     nomad.core.config.KubernetesConfig.K8S_LABELS_OPGUID))
                             continue
-                        op_guid = event['object'].metadata.labels[CONSTANTS.K8S_LABELS_OPGUID]
+                        op_guid = event['object'].metadata.labels[nomad.core.config.KubernetesConfig.K8S_LABELS_OPGUID]
                         try:
                             allotted_node_name = self.get_allocation(op_guid)
                             logger.info("Got allocation node - %s" % str(allotted_node_name))
