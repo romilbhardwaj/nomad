@@ -8,6 +8,7 @@ from queue import Queue
 
 import dill
 from nomad.core.config import CONSTANTS
+from nomad.core.placement.minlatsolver import RecMinLatencySolver
 from nomad.core.universe.universe import Universe
 
 from nomad.core.utils.LoggerWriter import LoggerWriter
@@ -56,6 +57,8 @@ class Master(object):
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
+        self.scheduler = RecMinLatencySolver(universe.get_graph())
+
         # profile_cluster()
 
     def register_client_onalive(self, guid):
@@ -66,12 +69,43 @@ class Master(object):
         logging.info("Client %s requested next op address, returning %s" % (guid, next_op_addr))
         return next_op_addr
 
-    def submit_pipeline(self, fns, start_node, end_node):
-        self.universe.add_pipline(pipeline)
-        self.profile_pipeline(pipeline)
-        scheduling_result = self.scheduler.schedule(pipeline)
-        self.universe.save_scheduling_decision(scheduling_result)
-        self.instantiate_pipeline(pipeline)
+    def submit_network_profiling(self, network_profiling_info):
+        self.universe.update_network_profiling(network_profiling_info)
+
+    def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
+        self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
+
+    def submit_pipeline(self, fns, start, end):
+        pipeline_id = self.universe.add_pipeline(fns, start, end)
+        pipeline_profiling_info = self.profile_pipeline(self.universe.get_pipeline(pipeline_id))
+        self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
+        self.schedule(pipeline_id)
+        status = self.instantiate_pipeline(pipeline_id)
+        return pipeline_id if status != -1 else -1
+
+    def schedule(self, pipeline_id):
+        pipeline = self.universe.get_pipeline(pipeline_id)
+        start, end = pipeline.start_node, pipeline.end_node
+        operators = [self.universe.get_operator(oid) for oid in pipeline.operators]
+        #run scheduler
+        latency, placement, distribution = self.scheduler.find_optimal_placement(start, end, operators)
+        #create opertor instances
+        print(placement)
+
+    def profile_pipeline(self, pipeline):
+        #create_pipeline_profiling_containers()
+        #wait_for_pipeline_profiling_completion()
+
+        # fill in cloud_exec_time and msg_size
+        pipeline_profiling_info = []
+        for op_id in pipeline.operators:
+            profiling_info = {}
+            profiling_info['id'] = op_id
+            profiling_info['ref_exec_time'] = 10
+            profiling_info['output_msg_size'] = 20
+            pipeline_profiling_info.append(profiling_info)
+
+        return pipeline_profiling_info
 
     # def profile_cluster():
     #     create_profiling_containers()
