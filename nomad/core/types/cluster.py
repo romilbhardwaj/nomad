@@ -4,9 +4,8 @@ from nomad.core.graph.node import Node
 from nomad.core.graph.link import Link
 
 class Cluster(object):
-    def __init__(self, nodes, links, graph):
+    def __init__(self, graph=None):
         """
-
         :param nodes:
         :type nodes: core.graph.node
         :param links:
@@ -14,9 +13,6 @@ class Cluster(object):
         :param graph:
         :type graph: NetworkXDiGraph
         """
-        self.nodes = nodes
-        #TODO: links should be a dictionary mapping a tuple (from,to) -> core.graph.link
-        self.links = links
         self.graph = graph
 
     @classmethod
@@ -51,6 +47,28 @@ class Cluster(object):
         #Create cluster
         return cls(nodes, links, graph)
 
+    @classmethod
+    def create_cluster(cls, node_list):
+        #create node_objects
+        nodes = [Node(label=label) for label in node_list]
+
+        #create graph
+        graph = nx.Graph(node_list)
+
+        #Add edges
+        edges = []
+        for i in range(len(node_list)):
+            for j in range(len(node_list)):
+                edges.append((node_list[i], node_list[j]))
+
+        graph.add_edges_from(edges)
+
+        #Assign node objects
+        for i in range(len(nodes)):
+            graph[node_list[i]]['node'] = nodes[i]
+
+        return cls(graph)
+
     def update_links(self, links_json):
         """
         :param links_json:
@@ -61,9 +79,19 @@ class Cluster(object):
             link = Link(l['from'], l['to'], l['bandwidth'], l['latency'])
             try:
                 self.graph[l['from']][l['to']][0]['link'] = link
-                #update links dict.
-                self.links[(l['from'],l['to'])] = link
 
             except Exception as e:
                 print(e)
                 print('Could not update link between node %s and %s' % (l['from'], l['to']) )
+
+
+    def update_nodes(self, nodes_dict):
+        for k,v in nodes_dict.items():
+           try:
+               node = Node(label=k, C= v['C'])
+               self.graph[k]['node'] = node
+
+           except Exception as e:
+               print(e)
+               print('Could not update node %s' % k)
+
