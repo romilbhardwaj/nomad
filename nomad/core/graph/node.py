@@ -1,6 +1,6 @@
 
 class Node:
-    def __init__(self, label, C):
+    def __init__(self, label, C=0):
         self._label = label
         self._C = C
         self._C_scaled = C
