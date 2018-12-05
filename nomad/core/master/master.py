@@ -41,7 +41,7 @@ from nomad.core.utils.helpers import construct_xmlrpc_addr
 class Master(object):
     def __init__(self, master_rpc_port=None):
         self.universe = Universe()
-        self.KubernetesAPI = KubernetesAPI()
+        #self.KubernetesAPI = KubernetesAPI()
 
         # Setting up the universe
         self.universe_setup()
@@ -157,7 +157,8 @@ class Master(object):
         operator_instances = [self.universe.get_operator_instance(guid) for guid in operator_instance_guids]
 
         #Instantiate in reverse order
-        for operator_instance in operator_instances.reverse():
+        operator_instances.reverse()
+        for operator_instance in operator_instances:
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
 
