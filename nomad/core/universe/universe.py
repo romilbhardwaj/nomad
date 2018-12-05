@@ -29,34 +29,28 @@ class Universe(object):
 
     @staticmethod
     def generate_guid():
-        return uuid.uuid4()
+        return str(uuid.uuid4())
 
-    @classmethod
-    def create_universe(cls, node_file, links_file, graph_topo_file):
-        """
+    def add_pipeline(self, fns, start, end, id=''):
+        #new pid
+        pid = self.generate_guid() if id == '' else id
 
-        :param node_file: JSON file containing node info
-        :param links_file: JSON file containing link info
-        :param graph_topo_file: File containing adjacency list. One node pair per line.
-        :return:
-        """
-        cluster = Cluster.read_cluster_spec(node_file, links_file, graph_topo_file)
-        return  cls(cluster)
-
-
-    def add_pipeline(self, fns, start, end):
         #create operators
         operators = []
-        for fn in fns:
-            op = Operator(fn_file=fn)
-            op_id = id(op)
+        for i, fn in enumerate(fns):
+            if i == len(fns) - 1:
+                next_op_id = None
+            else:
+                next_op_id = pid + "-" + str(i+1)
+
+            op_id = pid + "-" + str(i)
+            op = Operator(fn_file=fn, guid= op_id)
+            op._next = next_op_id
             operators.append(op_id)
             self.operators[op_id] = op
 
         #create pipeline object
-        pipeline = Pipeline(operators, start, end)
-        pid = id(pipeline)
-
+        pipeline = Pipeline(pid, operators, start, end)
         self.pipelines[pid] = pipeline
 
         return pid
@@ -107,7 +101,6 @@ class Universe(object):
 
     def update_network_profiling(self, link_profiling_info):
         '''
-
         :param link_profiling_info:
         :type link_profiling_info: List of link objects [Link()..]
         '''
