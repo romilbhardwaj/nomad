@@ -98,7 +98,7 @@ class Master(object):
     def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
-    def submit_pipeline(self, fns, start, end, id=0):
+    def submit_pipeline(self, fns, start, end, id=''):
         pipeline_id = self.universe.add_pipeline(fns, start, end, id)
         pipeline_profiling_info = self.profile_pipeline(self.universe.get_pipeline(pipeline_id))
         self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
