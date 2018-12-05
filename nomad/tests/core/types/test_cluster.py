@@ -2,16 +2,8 @@ import unittest
 from core.types.cluster import Cluster
 class TestClusterMethods(unittest.TestCase):
     def setUp(self):
-        self.node_info = open("tests/core/types/nodes.json")
-        self.link_info = open('tests/core/types/links.json')
-        self.graph_topo = open('tests/core/types/graph_topology.txt')
         self.node_list = ['phone', 'base_station', 'cloud', 'pc']
         self.cluster = Cluster.create_cluster(self.node_list)
-
-    def tearDown(self):
-        self.node_info.close()
-        self.link_info.close()
-        self.graph_topo.close()
 
     def test_create_cluster(self):
         self.assertTrue(len(self.cluster.graph.edges) == 16)
