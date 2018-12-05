@@ -97,4 +97,3 @@ class Cluster(object):
            except Exception as e:
                print(e)
                print('Could not update node %s' % k)
-
