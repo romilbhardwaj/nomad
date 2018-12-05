@@ -5,56 +5,48 @@ class TestClusterMethods(unittest.TestCase):
         self.node_info = open("tests/core/types/nodes.json")
         self.link_info = open('tests/core/types/links.json')
         self.graph_topo = open('tests/core/types/graph_topology.txt')
-        self.cluster = Cluster.read_cluster_spec('tests/core/types/nodes.json','tests/core/types/links.json', 'tests/core/types/graph_topology.txt')
+        self.node_list = ['phone', 'base_station', 'cloud', 'pc']
+        self.cluster = Cluster.create_cluster(self.node_list)
 
     def tearDown(self):
         self.node_info.close()
         self.link_info.close()
         self.graph_topo.close()
 
-    def test_create_universe(self):
-        self.assertTrue(len(self.cluster.nodes) == 4)
-        self.assertTrue(len(self.cluster.links) == 5)
+    def test_create_cluster(self):
+        self.assertTrue(len(self.cluster.graph.edges) == 16)
 
     def test_update_links(self):
         #Update existing links
         links_json = [
             {
-                "from": 0,
-                "to": 1,
+                "from": 'phone',
+                "to": 'base_station',
                 "bandwidth": 10,
                 "latency": 0.1
 
             },
             {
-                "from": 0,
-                "to": 3,
+                "from": 'phone',
+                "to": 'cloud',
                 "bandwidth": 20,
                 "latency": 0.05
 
             }
         ]
-        link_01 = self.cluster.graph[0][1][0]['link']
-        link_03 = self.cluster.graph[0][3][0]['link']
-        self.assertTrue(link_01._bandwidth == 5)
-        self.assertTrue(link_01._latency == 0.05)
-        self.assertTrue(link_03._bandwidth == 50)
-        self.assertTrue(link_03._latency == 0.05)
+        link_phone_base = self.cluster.graph['phone']['base_station'][0]
+        link_phone_cloud = self.cluster.graph['phone']['cloud'][0]
 
         self.cluster.update_links(links_json)
 
-        link_01 = self.cluster.graph[0][1][0]['link']
-        link_03 = self.cluster.graph[0][3][0]['link']
-        self.assertTrue(link_01._bandwidth == 10)
-        self.assertTrue(link_01._latency == 0.1)
-        self.assertTrue(link_03._bandwidth == 20)
-        self.assertTrue(link_03._latency == 0.05)
-
+        self.assertTrue(link_phone_base['link']._latency == 0.1)
+        self.assertTrue(link_phone_base['link']._bandwidth == 10)
+        self.assertTrue(link_phone_cloud['link']._latency == 0.05)
         #Update link between one or more non-existing nodes ( should fail )
         links_json = [
             {
-                "from": 0,
-                "to": 100,
+                "from": 'phone',
+                "to": 'cloud_3',
                 "bandwidth": 10,
                 "latency": 0.1
 
@@ -62,6 +54,35 @@ class TestClusterMethods(unittest.TestCase):
         ]
 
         #Update link between existing nodes with no previous link info.
+        self.cluster.update_links(links_json)
+
+    def test_update_nodes(self):
+        nodes =['phone', 'cloud', 'base_station', 'pc']
+
+        node_info = {
+
+            'phone': {
+                'C': 0.2
+            },
+
+            'cloud': {
+                "C": 1.0
+            },
+
+            'base_station': {
+                'C': 0.7
+            },
+
+            'pc': {
+                'C': 0.4
+            }
+
+        }
+
+        self.cluster.update_nodes(node_info)
+
+        for k, v in node_info.items():
+            self.assertEqual(self.cluster.graph.node[k]['node']._C, v['C'])
 
 
 if __name__ == '__main__':

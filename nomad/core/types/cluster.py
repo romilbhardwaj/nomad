@@ -53,7 +53,10 @@ class Cluster(object):
         nodes = [Node(label=label) for label in node_list]
 
         #create graph
-        graph = nx.Graph(node_list)
+        graph = nx.MultiDiGraph()
+
+        #Add Nodes
+        graph.add_nodes_from(node_list)
 
         #Add edges
         edges = []
@@ -64,8 +67,8 @@ class Cluster(object):
         graph.add_edges_from(edges)
 
         #Assign node objects
-        for i in range(len(nodes)):
-            graph[node_list[i]]['node'] = nodes[i]
+        for i in range(len(node_list)):
+            graph.node[node_list[i]]['node'] = nodes[i]
 
         return cls(graph)
 
@@ -89,7 +92,7 @@ class Cluster(object):
         for k,v in nodes_dict.items():
            try:
                node = Node(label=k, C= v['C'])
-               self.graph[k]['node'] = node
+               self.graph.node[k]['node'] = node
 
            except Exception as e:
                print(e)
