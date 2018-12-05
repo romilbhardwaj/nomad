@@ -63,6 +63,7 @@ class Universe(object):
         :return:
         :rtype:
         '''
+
         raise NotImplementedError()
 
     def get_pipeline(self, id):
@@ -87,14 +88,12 @@ class Universe(object):
 
     def update_pipeline_profiling(self, pid, pipeline_profiling_info):
         #Lookup pipeline
+        #TODO: remove pid input
         pipeline = self.pipelines[pid]
-
-        for operator_profile in pipeline_profiling_info:
-            oid = operator_profile['id']
-            operator = self.operators[oid]
-            operator.set_cloud_execution_time(operator_profile['ref_exec_time'])
-            operator.set_output_msg_size(operator_profile['output_msg_size'])
-
+        for op_id, operator_profile in pipeline_profiling_info.items():
+            operator = self.operators[op_id]
+            for key, val in operator_profile.items():
+                setattr(operator, '_'+key, val)
 
     def create_cluster(self, node_list_from_kuberenetes):
         self.cluster = Cluster.create_cluster(node_list_from_kuberenetes)
