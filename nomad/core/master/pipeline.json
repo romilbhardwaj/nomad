@@ -1,0 +1,23 @@
+{
+        "123-0": {
+
+                "label": "pre_processing",
+                "order": 0,
+                "cloud_execution_time": 10,
+                "output_msg_size": 100
+        },
+
+        "123-1": {
+                "label": "resampling",
+                "order": 1,
+                "cloud_execution_time": 5,
+                "output_msg_size": 5
+        },
+
+        "123-2": {
+                "label": "inference",
+                "order": 2,
+                "cloud_execution_time": 1,
+                "output_msg_size": 1
+        }
+}
