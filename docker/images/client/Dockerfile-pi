@@ -11,7 +11,7 @@ RUN  wget --quiet https://github.com/jjhelmus/berryconda/releases/download/v2.0.
     /bin/bash ~/berryconda.sh -b && \
     rm ~/berryconda.sh
 
-#ENV PATH /opt/conda/bin:$PATH
+ENV PATH /root/berryconda3/bin:$PATH
 
 # Begin setting up python environment
 WORKDIR /nomad
@@ -22,7 +22,7 @@ RUN conda update conda -y \
     && conda env create --force -f /nomad/environment.yml
 
 # Change conda env
-ENV PATH /opt/conda/envs/nomad/bin:$PATH
+ENV PATH /root/berryconda3/envs/nomad/bin:$PATH
 
 # Use tini as the entrypoint
 ENV TINI_VERSION v0.18.0
