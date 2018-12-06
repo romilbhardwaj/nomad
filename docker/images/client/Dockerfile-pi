@@ -11,7 +11,7 @@ RUN  wget --quiet https://github.com/jjhelmus/berryconda/releases/download/v2.0.
     /bin/bash ~/berryconda.sh -b && \
     rm ~/berryconda.sh
 
-ENV PATH /opt/conda/bin:$PATH
+#ENV PATH /opt/conda/bin:$PATH
 
 # Begin setting up python environment
 WORKDIR /nomad
