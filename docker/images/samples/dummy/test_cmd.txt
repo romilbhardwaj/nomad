@@ -1,0 +1,3 @@
+docker run -it -e "GUID=myclient" -e "MASTERRPC=http://127.0.0.1" -e "DEBUG=1" nomad/nomad_dummy
+
+docker run -it -e "GUID=myclient" -e "MASTERRPC=http://127.0.0.1" -e "DEBUG=1" -e "OPERATOR_PATH=/nomad/nomad/tests/core/master/generate_random_int.pickle" -e "IS_FINAL=1" nomad/nomad_dummy

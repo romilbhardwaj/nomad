@@ -2,7 +2,7 @@
 import json
 import logging
 
-import nomad.core.config.KubernetesConfig
+import nomad.core.config.KubernetesConfig as KubernetesConfig
 
 from ..config import CONSTANTS
 from ..config import SchedulerConfig
@@ -13,21 +13,21 @@ from kubernetes import client, config, watch
 logger = logging.getLogger(__name__)
 
 
-class KubernetesManager(object):
+class KubernetesScheduler(object):
 
-    def __init__(self, allocator, scheduler_name=SchedulerConfig.K8S_SCHEDULER_NAME):
-        logger.info("Initializing KubernetesManager")
+    def __init__(self, universe, scheduler_name=SchedulerConfig.K8S_SCHEDULER_NAME):
+        logger.info("Initializing KubernetesScheduler")
         logger.info("Using in-cluster auth.")
         config.load_incluster_config()
+        self.universe = universe
         self.kubecoreapi = client.CoreV1Api()
         self.scheduler_name = scheduler_name
-        logger.info("Using allocator %s" % str(allocator.__name__))
-        self.allocator = allocator
         logger.info("Scheduler Pre-init done.")
 
     def get_allocation(self, op_guid):
-        allotted_node = self.allocator.get_allocation(op_guid)
-        return allotted_node.id
+        op_inst = self.universe.get_operator_instance(op_guid)
+        allotted_node = op_inst.node_id
+        return allotted_node
 
     def k8s_schedule(self, name, node, namespace=SchedulerConfig.K8S_NAMESPACE):
         logger.info("Scheduling object %s on node %s." % (str(name), str(node)))
@@ -69,11 +69,11 @@ class KubernetesManager(object):
                 if event['object'].status.phase == "Pending" and event['object'].spec.node_name == None and event['object'].spec.scheduler_name == self.scheduler_name:
                     try:
                         logger.info("Trying to schedule k8s object %s" % event['object'].metadata.name)
-                        if nomad.core.config.KubernetesConfig.K8S_LABELS_OPGUID not in event['object'].metadata.labels:
+                        if KubernetesConfig.K8S_LABELS_OPGUID not in event['object'].metadata.labels:
                             logger.warning("Unable to schedule object %s without metadata label %s. Continuing.." % (event['object'].metadata.name,
-                                                                                                                     nomad.core.config.KubernetesConfig.K8S_LABELS_OPGUID))
+                                                                                                                     KubernetesConfig.K8S_LABELS_OPGUID))
                             continue
-                        op_guid = event['object'].metadata.labels[nomad.core.config.KubernetesConfig.K8S_LABELS_OPGUID]
+                        op_guid = event['object'].metadata.labels[KubernetesConfig.K8S_LABELS_OPGUID]
                         try:
                             allotted_node_name = self.get_allocation(op_guid)
                             logger.info("Got allocation node - %s" % str(allotted_node_name))
@@ -91,5 +91,5 @@ class KubernetesManager(object):
 
 # Only for debugging
 if __name__ == '__main__':
-    k = KubernetesManager()
+    k = KubernetesScheduler()
     k.run()

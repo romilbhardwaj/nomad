@@ -42,4 +42,4 @@ ENV PYTHONPATH /nomad/:$PYTHONPATH
 
 # CMD ["/bin/bash"]
 # Run the python script
-CMD ["python", "/nomad/nomad/core/master/master_launcher.py"]
+CMD ["python", "/nomad/nomad/core/client/client_envvar_launcher.py"]

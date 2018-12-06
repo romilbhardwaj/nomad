@@ -1,5 +1,8 @@
+from nomad.core.config import ClientConfig
+
+
 class Operator:
-    def __init__(self, guid, l='', fn_file='', t=0, s=0):
+    def __init__(self, guid, l='', fn_file='', t=0, s=0, is_first=False, is_final=False):
         self.guid = guid
         self._label = l #Name of operator
         self._fn_file = fn_file
@@ -7,6 +10,8 @@ class Operator:
         self._output_msg_size = s # Size of operator output in Kilobytes assuming a typical input.
         self._next = None # GUID of next op in pipeline
         self._op_instances = []
+        self.is_first = is_first
+        self.is_final = is_final
 
     def get_op_inst_guid(self):
         return self.guid + "-instance" + str(len(self._op_instances))
@@ -27,7 +32,7 @@ class Operator:
         self._output_msg_size = s
 
 class OperatorInstance(object):
-    def __init__(self, guid, pipeline_guid, operator_guid, node_id=None, client_ip=None, image=None):
+    def __init__(self, guid, pipeline_guid, operator_guid, node_id=None, client_ip=None, operator_path=None, is_first=False, is_final=False):
         '''
         Defines an operator instance running on the network. Associated with an operator and a pipeline.
         :param guid: GUID, typically of the form <pipeline_guid>-<operator_guid>-<instance_guid>
@@ -40,16 +45,33 @@ class OperatorInstance(object):
         :type node_id: str
         :param client_ip: IP of the client
         :type client_ip: str
-        :param image: docker image the operator instance is running
+        :param operator_path: path of the operator in the client docker image
         :type image: str
         '''
         self.guid = guid
         self.node_id = node_id  # Node Id where it is has been placed by the scheduler
         self.client_guid = guid     #TODO: Redundant, can this be removed?
         self.client_ip = client_ip
-        self.image = image
+        self.operator_path = operator_path
         self.operator_guid = operator_guid
         self.pipeline_guid = pipeline_guid
+        self.is_first = is_first
+        self.is_final = is_final
+        self.envs = None
 
     def update_ip(self, client_ip):
         self.client_ip = client_ip
+
+    def set_envs(self, master_rpc_address, client_rpc_port = ClientConfig.RPC_DEFAULT_PORT, debug=False):
+        self.envs = {
+            ClientConfig.ENVVAR_GUID: self.guid,
+            ClientConfig.ENVVAR_MASTERRPC: master_rpc_address,
+            ClientConfig.ENVVAR_RPCPORT: client_rpc_port,
+            ClientConfig.ENVVAR_OPERATORPATH: self.operator_path,
+            ClientConfig.ENVVAR_IS_FIRST: self.is_first,
+            ClientConfig.ENVVAR_IS_FINAL: self.is_final,
+            ClientConfig.ENVVAR_DEBUG: debug
+        }
+
+    def get_envs(self):
+        return self.envs

@@ -27,12 +27,14 @@ class KubernetesAPI(object):
         :return: List of names of nodes
         :rtype: list
         '''
+        logger.info("Getting nodes from the kubernetes API")
         node_list = self.kubecoreapi.list_node().items
         node_names = [node.metadata.name for node in node_list]
+        logger.info("Got nodes from kubernetes: %s" % str(node_names))
         return node_names
 
 
-    def create_kube_service_and_job(self, op_inst, ports=[["nomadmaster", 10000, 10000], ["nomadclient", 20000, 20000],
+    def create_kube_service_and_job(self, op_inst, ports=[["nomadmaster", 31000, 31000], ["nomadclient", 30000, 30000],
                                                           ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE):
         k8s_service = self.launch_kube_service(op_inst, ports, namespace)
         k8s_job = self.launch_kube_job(op_inst, namespace)
@@ -86,7 +88,7 @@ class KubernetesAPI(object):
         :return: Job object form the API
         '''
         container = self._create_kube_container(op_inst)
-        podspec = self._create_kube_podspec(op_inst, container, scheduler_name=KubernetesConfig.DEFAULT_SCHEDULER,
+        podspec = self._create_kube_podspec(container, scheduler_name=KubernetesConfig.DEFAULT_SCHEDULER,
                                             namespace=namespace)  # Specify scheduler...
         kube_job = self._create_kube_job(op_inst, podspec, namespace=namespace)
 
@@ -96,11 +98,11 @@ class KubernetesAPI(object):
     def _create_kube_job(self, op_inst, podspec, namespace=KubernetesConfig.K8S_NAMESPACE):
         job_name = op_inst.guid + "-job"
         job_metadata = client.V1ObjectMeta(name=job_name, namespace=namespace, labels={
-            KubernetesConfig.KubernetesConfig.K8S_LABELS_GUID: op_inst.guid})  # Label for the service to bind to
+            KubernetesConfig.K8S_LABELS_OPGUID: op_inst.guid})  # Label for the service to bind to
         pod_name = op_inst.guid + "-pod"
         pod_metadata = client.V1ObjectMeta(name=pod_name, namespace=namespace,
                                            labels={
-                                               KubernetesConfig.K8S_LABELS_GUID: op_inst.guid})  # Label for the service to bind to
+                                               KubernetesConfig.K8S_LABELS_OPGUID: op_inst.guid})  # Label for the service to bind to
         jobspec = V1JobSpec(template=V1PodTemplateSpec(metadata=pod_metadata, spec=podspec))
         kube_job = V1Job(metadata=job_metadata, spec=jobspec)
         return kube_job
@@ -119,13 +121,15 @@ class KubernetesAPI(object):
                                 image_pull_secrets=[client.V1LocalObjectReference(KubernetesConfig.IMAGE_PULL_SECRET)])
         return spec
 
-    def _create_kube_container(self, op_inst, shm_size=None):
+    def _create_kube_container(self, op_inst, shm_size=None, image="romilb/nomad_client:latest"):
         name = op_inst.guid + "-container"
-        env_vars = merge_dicts(op_inst.get_envs(), op_inst.custom_envs)
-        image = op_inst.image
+        assert(isinstance(name, str))
+        env_vars = op_inst.get_envs()
+        assert(isinstance(env_vars, dict))
+        # env_vars = merge_dicts(op_inst.get_envs(), op_inst.custom_envs)
         logger.info("Creating container with image %s, envs = %s" % (image, str(env_vars)))
         container_envs = [V1EnvVar(k, str(v)) for k, v in env_vars.items()]
-        container_ports = [V1ContainerPort(container_port=10000, name="rpc")]
+        container_ports = [V1ContainerPort(container_port=30000, name="rpc")]
 
         security_capabilites = V1Capabilities()
         security_capabilites.add = ['SYS_PTRACE']
@@ -154,6 +158,6 @@ class KubernetesAPI(object):
         for portname, targetport, portnumber in ports:
             serviceports.append(V1ServicePort(name=portname, target_port=targetport, port=portnumber))
         metadata = client.V1ObjectMeta(name=name, namespace=namespace)
-        spec = V1ServiceSpec(selector={KubernetesConfig.K8S_LABELS_GUID: k8s_id}, ports=serviceports)
+        spec = V1ServiceSpec(selector={KubernetesConfig.K8S_LABELS_OPGUID: k8s_id}, ports=serviceports)
         service = V1Service(metadata=metadata, spec=spec)
         return service

@@ -116,10 +116,11 @@ class NomadClient(object):
         :param next_op_addr: Address of the next operator. If not specified, fetched from the master
         :type next_op_addr: str
         '''
+        logger.info("Instantiating client")
         self.guid = guid
         self.master_rpc_uri = master_rpc_uri
         if operator_path is None:
-            self.operator_path = ClientConfig.DEAFULT_OPERATOR_DILL_PATH
+            self.operator_path = ClientConfig.DEAFULT_OPERATOR_PATH
         else:
             self.operator_path = operator_path
         self.next_op_addr = next_op_addr
@@ -146,16 +147,20 @@ class NomadClient(object):
         # Setup master RPCProxy
         self.standalone_mode = False  # When no server uri specified.
         try:
+            logger.info("Setting up RPC connection to master with connection string %s" % self.master_rpc_uri)
             self.master_rpc_proxy = xmlrpc.client.ServerProxy(self.master_rpc_uri, allow_none=True)
-            if self.next_op_addr is None:
+            if not self.next_op_addr:
+                logger.info("Querying master for the next operator address")
                 self.next_op_addr = self.master_rpc_proxy.get_next_op_address(self.guid)
+            else:
+                logger.info("I already have a next_op address: %s. Not querying master." % str(self.next_op_addr))
         except:
             logger.exception("Error while setting up RPC connection to server.")
             raise
 
         # Init RPC Server
         methods_to_register = [self.submit_message, self.ready_check]
-        logger.info("Creating RPC server with the port %d" % self.client_rpc_port)
+        logger.info("Creating client RPC server with the port %d" % self.client_rpc_port)
         self.rpcserver = RPCServerThread(methods_to_register, self.client_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
@@ -171,6 +176,7 @@ class NomadClient(object):
                 logger.info("RPC is ready. Proceed to notifying nomad master.")
 
         if not self.debug:
+            logger.info("Notifying master that I'm alive!")
             self.notify_server_onalive()
 
         # Start threads.
@@ -179,9 +185,11 @@ class NomadClient(object):
                                                    self.is_first_operator)
         self.opreator_thread.start()
 
-        logger.info("Launching forwarding thread.")
+        logger.info("Launching forwarding thread with next_operator_addr: %s" % str(self.next_op_addr))
         self.forwarding_thread = self.ForwardingThread(self.outgoing_queue, self.next_op_addr, self.is_final_operator)
         self.forwarding_thread.start()
+
+        logger.info("Client instantiated with fields: %s" % str(self.__dict__))
 
     def test_self_rpcserver(self):
         uri = "http://localhost:%d" % int(self.client_rpc_port)

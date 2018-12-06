@@ -1,0 +1,44 @@
+[
+{
+        "from": "kube-master",
+        "to": "kube-node-1",
+        "bandwidth": 5,
+        "latency": 0.05
+
+},
+{
+        "from": "kube-master",
+        "to": "kube-node-2",
+        "bandwidth": 10,
+        "latency": 0.05
+
+},
+{
+        "from": "kube-node-1",
+        "to": "kube-node-2",
+        "bandwidth": 50,
+        "latency": 0.05
+
+},
+{
+        "from": "kube-node-1",
+        "to": "kube-master",
+        "bandwidth": 100,
+        "latency": 0.05
+
+},
+{
+        "from": "kube-node-2",
+        "to": "kube-node-1",
+        "bandwidth": 50,
+        "latency": 0.05
+
+},
+{
+        "from": "kube-node-2",
+        "to": "kube-master",
+        "bandwidth": 100,
+        "latency": 0.05
+
+}
+]

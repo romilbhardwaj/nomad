@@ -1,21 +1,21 @@
 import os
 import logging
+import threading
 import time
 import sys
-from queue import Queue
 import json
-import dill
 from nomad.core.config import CONSTANTS, ClientConfig
 from nomad.core.master.kubernetes_api import KubernetesAPI
 from nomad.core.placement.minlatsolver import RecMinLatencySolver
+from nomad.core.scheduler.KubernetesScheduler import KubernetesScheduler
 from nomad.core.universe.universe import Universe
 
 from nomad.core.utils.LoggerWriter import LoggerWriter
 from nomad.core.utils.RPCServerThreads import RPCServerThread
 import nomad.core.config.MasterConfig as MasterConfig
+from nomad.core.utils.helpers import construct_xmlrpc_addr
 
 # ====== BEGIN SETUP LOGGING =========
-from nomad.core.utils.helpers import construct_xmlrpc_addr
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -38,6 +38,16 @@ sys.stderr = LoggerWriter(logger.warning)
 
 # ======= LOGGER SETUP DONE =========
 
+class SchedulerThread(threading.Thread):
+    def __init__(self, scheduler):
+        threading.Thread.__init__(self)
+        self.daemon = False
+        self.stoprequest = threading.Event()
+        self.scheduler = scheduler
+
+    def run(self):
+        self.scheduler.run()
+
 class Master(object):
     def __init__(self, master_rpc_port=None):
         self.universe = Universe()
@@ -47,38 +57,63 @@ class Master(object):
         self.universe_setup()
 
         if master_rpc_port is None:
+            logger.warning("No master_rpc_port specified, using default %d" % MasterConfig.RPC_DEFAULT_PORT)
             self.master_rpc_port = MasterConfig.RPC_DEFAULT_PORT
         else:
             if isinstance(master_rpc_port, int) and (master_rpc_port < CONSTANTS.MAX_PORT_NUM) and (
                     master_rpc_port > CONSTANTS.MIN_PORT_NUM):
-                self.master_rpc_port = MasterConfig.RPC_DEFAULT_PORT
+                self.master_rpc_port = master_rpc_port
             else:
                 raise TypeError(
                     "RPC Port must be int between %d and %d" % (CONSTANTS.MIN_PORT_NUM, CONSTANTS.MAX_PORT_NUM))
 
+        if MasterConfig.MASTER_K8S_SERVICE_ENVVAR in os.environ:
+            self.ip_address = str(os.environ[MasterConfig.MASTER_K8S_SERVICE_ENVVAR])
+            logger.info("Envvar introspection: Read env var %s, using ip %s" % (
+                MasterConfig.MASTER_K8S_SERVICE_ENVVAR, self.ip_address))
+        else:
+            logger.warning(
+                "Envvar %s not detected. IP Address is none. clients spawned from this master won't be able to make RPC calls." % MasterConfig.MASTER_K8S_SERVICE_ENVVAR)
+            self.ip_address = None
+
         # Init RPC Server
-        methods_to_register = [self.register_client_onalive, self.get_next_op_address]
+        logger.info("Instantiating RPC server on port %d" % self.master_rpc_port)
+        methods_to_register = [self.submit_pipeline, self.register_client_onalive, self.get_next_op_address]
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
-
+        logger.info("Creating the scheduler object.")
         self.scheduler = RecMinLatencySolver(self.universe.get_graph())
+
+        self._init_k8s_scheduler()
+
+        logger.info("Master instantiation complete.")
+
+    def _init_k8s_scheduler(self):
+        sched = KubernetesScheduler(universe=self.universe)
+        self.k8s_schedthread = SchedulerThread(sched)
+        self.k8s_schedthread.start()
 
     def universe_setup(self):
         '''
         Static profiles the cluster and updates the universe with the cluster and the profiling values.
         '''
-        #node_list = self.KubernetesAPI.get_nodes()  # List of str
-        node_list_test =  ['phone', 'cloud', 'pc', 'base_station'] # List of str
-        self.universe.create_cluster(node_list_test)
+        logger.info("Setting up universe.")
+        node_list = self.KubernetesAPI.get_nodes()  # List of str
+       # node_list_test =  ['phone', 'cloud', 'pc', 'base_station'] # List of str
+        logger.info("Creating cluster object in universe.")
+        self.universe.create_cluster(node_list)
+        logger.info("Cluster created, adding profiling info now.")
         node_profiling_info, link_profiling_info = self.profile_cluster(self.universe.cluster) # Dict of {'node_id': {'C': int}}
         self.universe.update_network_profiling(link_profiling_info)
         self.universe.update_node_profiling(node_profiling_info)
+        logger.info("Profiling complete.")
+        logger.info("Universe setup complete.")
 
     def profile_cluster(self, cluster):
         #TODO: read from file
-        node_profiling_file  = open('nomad/core/master/nodes.json')
-        link_profiling_file  = open('nomad/core/master/links.json')
+        node_profiling_file  = open('/nomad/nomad/tests/core/master/nodes_test.json')
+        link_profiling_file  = open('/nomad/nomad/tests/core/master/links_test.json')
         node_profiling_info = json.load(node_profiling_file)    # Dict of {'node_id': {'C': int}}
         link_profiling_info = json.load(link_profiling_file)     # List of link objects [Link()..]
         # Replace with reading from file.
@@ -97,7 +132,7 @@ class Master(object):
             next_op_addr = None
         else:
             next_op = self.universe.get_operator(next_op_guid)
-            next_op_inst_ip = next_op._op_instances[0].client_ip    # _op_instances has already been instantiated while scheduling, but the IP may not exist depending if it has been instantiated yet.
+            next_op_inst_ip = self.universe.get_operator_instance(next_op._op_instances[0]).client_ip    # _op_instances has already been instantiated while scheduling, but the IP may not exist depending if it has been instantiated yet.
 
             retry_count = 0
             while not next_op_inst_ip:
@@ -119,37 +154,46 @@ class Master(object):
     def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
-    def submit_pipeline(self, fns, start, end, id=''):
-        pipeline_id = self.universe.add_pipeline(fns, start, end, id)
+    def submit_pipeline(self, fns, start, end, pipeline_id):
+        logger.info("Submit_pipeline is called with params fns=%s, start=%s, end=%s, pipeline_id=%s." % (str(fns), str(start), str(end), str(pipeline_id)))
+        pipeline_id = self.universe.add_pipeline(fns, start, end, pipeline_id)
+        logger.info("Pipeline %s added to universe, now profiling." % str(pipeline_id))
         pipeline_profiling_info = self.profile_pipeline(self.universe.get_pipeline(pipeline_id))
         self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
+        logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
+        logger.info("Pipeline %s schedule computed! Now instantiating.." % str(pipeline_id))
         status = self.instantiate_pipeline(pipeline_id)
+        logger.info("Pipeline %s instantiated!" % str(pipeline_id))
         return pipeline_id if status != -1 else -1
 
     def schedule(self, pipeline_guid):
+        logger.info("Trying to schedule pipeline %s" % str(pipeline_guid))
         pipeline = self.universe.get_pipeline(pipeline_guid)
         start, end = pipeline.start_node, pipeline.end_node
         oid_list = [oid for oid in pipeline.operators]
         operators = [self.universe.get_operator(oid) for oid in oid_list]
         #run scheduler
+        logger.info("Finding optimal placement for pipeline %s" % str(pipeline_guid))
         latency, placement, distribution = self.scheduler.find_optimal_placement(start, end, operators)
+        logger.info("Scheduling result - latency %s, placement %s, distribution %s." % (str(latency), str(placement), str(distribution)))
 
         # Create OperatorInstances
+        logger.info("Now trying to create the operator instances.")
         for i in range(0, len(oid_list)):
             op_inst = self.universe.create_and_append_operator_instance(pipeline_guid, oid_list[i], node_id=placement[i])
-
-        logger.info("The placement decision is %s" % str(placement))
+            logger.info("Setting env for operator_instance %s" % op_inst.guid)
+            op_inst.set_envs(construct_xmlrpc_addr(self.ip_address, self.master_rpc_port))
 
     def profile_pipeline(self, pipeline):
         #create_pipeline_profiling_containers()
         #wait_for_pipeline_profiling_completion()
 
         #read from file
-        profiling_info_file = open('nomad/core/master/pipeline.json')
+        profiling_info_file = open('/nomad/nomad/tests/core/master/pipeline_test.json')
         profiling_info = json.load(profiling_info_file)
         profiling_info_file.close()
-        return  profiling_info
+        return profiling_info
 
     def instantiate_pipeline(self, pipeline_id):
         pipeline = self.universe.get_pipeline(pipeline_id)

@@ -4,10 +4,7 @@ channels:
 - defaults
 dependencies:
 - python=3.6
-- dill=0.2.8.2
 - cloudpickle=0.6.1
 - pip:
     - kubernetes==8.0.0b1
     - networkx==2.2
-
-a

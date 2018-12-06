@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: nomadmaster-service
+  namespace: nomad
+spec:
+  selector:
+    app: nomadmaster
+  type: NodePort
+  ports:
+  - protocol: TCP
+    name: master-rpc
+    port: 31000
+    targetPort: 31000
+    nodePort: 31000
+  - protocol: TCP
+    name: master-rpc2
+    port: 30000
+    targetPort: 30000
+    nodePort: 30000

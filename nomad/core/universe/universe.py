@@ -1,9 +1,13 @@
+import os
 import uuid
 
+from nomad.core.config import ClientConfig
 from nomad.core.types.cluster import Cluster
 from nomad.core.types.operator import Operator, OperatorInstance
 from nomad.core.types.pipeline import Pipeline
 
+import logging
+logger = logging.getLogger(__name__)
 
 class Universe(object):
     def __init__(self):
@@ -44,7 +48,16 @@ class Universe(object):
                 next_op_id = pid + "-" + str(i+1)
 
             op_id = pid + "-" + str(i)
-            op = Operator(fn_file=fn, guid= op_id)
+
+            is_first = False
+            is_final = False
+            if i == 0:
+                logger.info("Hit is first!")
+                is_first = True
+            if i == (len(fns) - 1):
+                logger.info("Hit is final!")
+                is_final = True
+            op = Operator(fn_file=fn, guid=op_id, is_final=is_final, is_first=is_first)
             op._next = next_op_id
             operators.append(op_id)
             self.operators[op_id] = op
@@ -64,6 +77,7 @@ class Universe(object):
         :rtype:
         '''
         self.operator_instances[op_instance.guid] = op_instance
+        logger.info("Adding operator instance %s" % str(op_instance.__dict__))
 
     def get_pipeline(self, guid):
         return self.pipelines[guid]
@@ -106,7 +120,11 @@ class Universe(object):
         '''
         operator = self.get_operator(operator_guid)
         op_inst_guid = operator.get_op_inst_guid()  # Get a GUID for the operator instance
-        op_inst = OperatorInstance(op_inst_guid, pipeline_guid, operator_guid, **kwargs) # Create the instance
+        kwargs['operator_path'] = os.path.join(ClientConfig.OPERATOR_BASE_PATH, operator._fn_file + ".pickle")
+        kwargs['is_first'] = operator.is_first
+        kwargs['is_final'] = operator.is_final
+        logging.info("Using operator path %s to create operator instance %s object" % (kwargs['operator_path'], op_inst_guid))
+        op_inst = OperatorInstance(op_inst_guid, pipeline_guid, operator_guid,**kwargs) # Create the instance
         operator.append_op_instance(op_inst_guid)
         self.add_operator_instance(op_inst)
         return op_inst

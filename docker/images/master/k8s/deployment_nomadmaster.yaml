@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nomadmaster-deployment
+  namespace: nomad
+spec:
+  selector:
+    matchLabels:
+      app: nomadmaster
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        app: nomadmaster
+    spec:
+      containers:
+      - name: nomadmaster
+        image: romilb/nomad_master
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 31000
+        env:
+        - name: USE_INCLUSTER_AUTH
+          value: "True"
