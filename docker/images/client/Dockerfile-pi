@@ -27,6 +27,7 @@ ENV PATH /root/berryconda3/envs/nomad/bin:$PATH
 
 #install picamera
 RUN pip install picamera
+RUN conda install opencv
 
 # Use tini as the entrypoint
 ENV TINI_VERSION v0.18.0
