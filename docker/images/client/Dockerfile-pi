@@ -24,6 +24,10 @@ RUN conda update conda -y \
 # Change conda env
 ENV PATH /root/berryconda3/envs/nomad/bin:$PATH
 
+
+#install picamera
+RUN pip install picamera
+
 # Use tini as the entrypoint
 ENV TINI_VERSION v0.18.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-armhf /tini
