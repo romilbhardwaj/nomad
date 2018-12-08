@@ -52,23 +52,25 @@ class TestClusterMethods(unittest.TestCase):
         nodes =['phone', 'cloud', 'base_station', 'pc']
 
         node_info = {
-
-            'phone': {
-                'C': 0.2
+            "phone": {
+              "C": 0.2,
+              "architecture": "arm"
             },
 
-            'cloud': {
-                "C": 1.0
+            "cloud": {
+              "C": 1.0,
+              "architecture": "x86"
             },
 
-            'base_station': {
-                'C': 0.7
+            "base_station": {
+              "C": 0.7,
+              "architecture": "x86"
             },
 
-            'pc': {
-                'C': 0.4
+            "pc": {
+              "C": 0.4,
+              "architecture": "x86"
             }
-
         }
 
         self.cluster.update_nodes(node_info)
@@ -76,6 +78,34 @@ class TestClusterMethods(unittest.TestCase):
         for k, v in node_info.items():
             self.assertEqual(self.cluster.graph.node[k]['node']._C, v['C'])
 
+
+    def test_get_node(self):
+        node_info = {
+            "phone": {
+                "C": 0.2,
+                "architecture": "arm"
+            },
+
+            "cloud": {
+                "C": 1.0,
+                "architecture": "x86"
+            },
+
+            "base_station": {
+                "C": 0.7,
+                "architecture": "x86"
+            },
+
+            "pc": {
+                "C": 0.4,
+                "architecture": "x86"
+            }
+        }
+
+        self.cluster.update_nodes(node_info)
+
+        node = self.cluster.get_node('cloud')
+        self.assertEqual(node._C, 1.0)
 
 if __name__ == '__main__':
     unittest.main()
