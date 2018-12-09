@@ -91,9 +91,13 @@ class Cluster(object):
     def update_nodes(self, nodes_dict):
         for k,v in nodes_dict.items():
            try:
-               node = Node(label=k, C= v['C'])
+               node = Node(label=k, C= v['C'], architecture=v['architecture'])
                self.graph.node[k]['node'] = node
 
            except Exception as e:
                print(e)
                print('Could not update node %s' % k)
+
+
+    def get_node(self, label):
+        return self.graph.node[label]['node']

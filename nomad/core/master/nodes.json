@@ -1,17 +1,21 @@
 {
         "phone": {
-          "C": 0.2
+          "C": 0.2,
+          "architecture": "arm"
         },
 
         "cloud": {
-          "C": 1.0
+          "C": 1.0,
+          "architecture": "x86"
         },
 
         "base_station": {
-          "C": 0.7
+          "C": 0.7,
+          "architecture": "x86"
         },
 
         "pc": {
-          "C": 0.4
+          "C": 0.4,
+          "architecture": "x86"
         }
 }

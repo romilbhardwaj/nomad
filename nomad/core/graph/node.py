@@ -1,10 +1,11 @@
 
 class Node:
-    def __init__(self, label, C=0):
+    def __init__(self, label, C=0, architecture=''):
         self._label = label
         self._C = C
         self._C_scaled = C
         self._num_operators = 0
+        self._architecture = architecture
     
     def processing_time(self, operator, ops_count):
         return (operator.cloud_execution_time() * ops_count) / self._C
