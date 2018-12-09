@@ -15,11 +15,11 @@ ENV PATH /root/berryconda3/bin:$PATH
 
 # Begin setting up python environment
 WORKDIR /nomad
-ADD nomad/setup/environment.yml /nomad
+ADD nomad/setup/environment_rpi.yml /nomad
 
 # update conda and setup environment
 RUN conda update conda -y \
-    && conda env create --force -f /nomad/environment.yml
+    && conda env create --force -f /nomad/environment_rpi.yml
 
 # Change conda env
 ENV PATH /root/berryconda3/envs/nomad/bin:$PATH
