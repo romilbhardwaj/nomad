@@ -1,9 +1,8 @@
-FROM ubuntu:16.04
+FROM resin/rpi-raspbian:jessie
 
 # Update apt and install wget
 RUN  apt-get update \
-  && apt-get install -y wget libopenmpi-dev wget nano bzip2 libffi-dev\
-  && rm -rf /var/lib/apt/lists/*
+  && apt-get install -y wget libopenmpi-dev wget nano bzip2 gcc libffi-dev
 
 #Install conda
 RUN  wget --quiet https://github.com/jjhelmus/berryconda/releases/download/v2.0.0/Berryconda3-2.0.0-Linux-armv7l.sh -O ~/berryconda.sh && \
@@ -13,13 +12,16 @@ RUN  wget --quiet https://github.com/jjhelmus/berryconda/releases/download/v2.0.
 
 ENV PATH /root/berryconda3/bin:$PATH
 
+
 # Begin setting up python environment
 WORKDIR /nomad
 ADD nomad/setup/environment_rpi.yml /nomad
 
+RUN apt-get install build-essential
+
 # update conda and setup environment
-RUN conda update conda -y \
-    && conda env create --force -f /nomad/environment_rpi.yml
+RUN conda update conda -y
+RUN conda env create --force -f /nomad/environment_rpi.yml
 
 # Change conda env
 ENV PATH /root/berryconda3/envs/nomad/bin:$PATH
@@ -42,7 +44,6 @@ RUN mkdir -p /nomad/logs/
 EXPOSE 30000 31000 20000 10000
 
 RUN apt-get install --reinstall libraspberrypi0 libraspberrypi-dev libraspberrypi-doc libraspberrypi-bin
-
 # Add nomad src
 ADD nomad /nomad/nomad
 ENV PYTHONPATH /nomad/:$PYTHONPATH
