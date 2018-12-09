@@ -113,9 +113,13 @@ class Master(object):
     def profile_cluster(self, cluster):
         #TODO: read from file
         is_aws = False
+        is_e2e = True
         if is_aws:
-            node_profiling_file  = open('/nomad/nomad/tests/core/master/nodes_aws.json')
-            link_profiling_file  = open('/nomad/nomad/tests/core/master/links_aws.json')
+            node_profiling_file = open('/nomad/nomad/tests/core/master/nodes_aws.json')
+            link_profiling_file = open('/nomad/nomad/tests/core/master/links_aws.json')
+        if is_e2e:
+            node_profiling_file = open('/nomad/nomad/tests/core/master/nodes_e2e_test.json')
+            link_profiling_file = open('/nomad/nomad/tests/core/master/links_e2e_test.json')
         else:
             node_profiling_file = open('/nomad/nomad/tests/core/master/nodes_test.json')
             link_profiling_file = open('/nomad/nomad/tests/core/master/links_test.json')
@@ -208,7 +212,8 @@ class Master(object):
         #Instantiate in reverse order
         operator_instances.reverse()
         for operator_instance in operator_instances:
-            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance)
+            node = self.universe.get_node(operator_instance.node_id)
+            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
 
 if __name__ == '__main__':

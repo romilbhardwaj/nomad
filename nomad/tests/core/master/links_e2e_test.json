@@ -1,0 +1,15 @@
+[
+{
+        "from": "romilx1yoga",
+        "to": "raspberrypi",
+        "bandwidth": 5,
+        "latency": 0.05
+
+},
+{
+        "from": "raspberrypi",
+        "to": "romilx1yoga",
+        "bandwidth": 10,
+        "latency": 0.05
+}
+]

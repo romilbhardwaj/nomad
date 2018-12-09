@@ -7,6 +7,8 @@ from kubernetes.client import V1EnvVar, V1ContainerPort, V1Job, V1JobSpec, V1Pod
     V1ServiceSpec, V1DeleteOptions, V1SecurityContext, V1Capabilities
 
 from nomad.core.config import KubernetesConfig
+from nomad.core.config.CONSTANTS import ClientDockerImages
+from nomad.core.graph.node import Architectures
 from nomad.core.utils.helpers import merge_dicts
 
 # logging.basicConfig(level=logging.INFO)
@@ -35,9 +37,16 @@ class KubernetesAPI(object):
 
 
     def create_kube_service_and_job(self, op_inst, ports=[["nomadmaster", 31000, 31000], ["nomadclient", 30000, 30000],
-                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE):
+                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, architecture=Architectures.x86):
         k8s_service = self.launch_kube_service(op_inst, ports, namespace)
-        k8s_job = self.launch_kube_job(op_inst, namespace)
+
+        if architecture == Architectures.x86:
+            image = ClientDockerImages.x86
+        elif architecture == Architectures.rpiarm:
+            image = ClientDockerImages.rpiarm
+        else:
+            raise Exception("Unknown architecture %s" % str(architecture))
+        k8s_job = self.launch_kube_job(op_inst, image, namespace=namespace)
         return k8s_service, k8s_job
 
     def delete_kube_service_and_job(self, guid, namespace='gandiva'):
@@ -80,14 +89,14 @@ class KubernetesAPI(object):
                                                          V1DeleteOptions(propagation_policy="Background"))
         return status
 
-    def launch_kube_job(self, op_inst, namespace=KubernetesConfig.K8S_NAMESPACE):
+    def launch_kube_job(self, op_inst, image, namespace=KubernetesConfig.K8S_NAMESPACE):
         '''
         Creates a Kube job from JobInfo and launches it on the cluster.
         :param op_inst: OperatorInstance
         :param namespace:
         :return: Job object form the API
         '''
-        container = self._create_kube_container(op_inst)
+        container = self._create_kube_container(op_inst, image=image)
         podspec = self._create_kube_podspec(container, scheduler_name=KubernetesConfig.DEFAULT_SCHEDULER,
                                             namespace=namespace)  # Specify scheduler...
         kube_job = self._create_kube_job(op_inst, podspec, namespace=namespace)

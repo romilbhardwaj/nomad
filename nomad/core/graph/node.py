@@ -1,3 +1,6 @@
+class Architectures:
+    x86 = 'x86'
+    rpiarm = 'rpiarm'
 
 class Node:
     def __init__(self, label, C=0, architecture=''):

@@ -1,0 +1,9 @@
+{
+        "romilx1yoga": {
+          "C": 1.0
+        },
+
+        "raspberrypi": {
+          "C": 0.1
+        }
+}
