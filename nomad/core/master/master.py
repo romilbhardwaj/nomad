@@ -112,8 +112,13 @@ class Master(object):
 
     def profile_cluster(self, cluster):
         #TODO: read from file
-        node_profiling_file  = open('/nomad/nomad/tests/core/master/nodes_test.json')
-        link_profiling_file  = open('/nomad/nomad/tests/core/master/links_test.json')
+        is_aws = False
+        if is_aws:
+            node_profiling_file  = open('/nomad/nomad/tests/core/master/nodes_aws.json')
+            link_profiling_file  = open('/nomad/nomad/tests/core/master/links_aws.json')
+        else:
+            node_profiling_file = open('/nomad/nomad/tests/core/master/nodes_test.json')
+            link_profiling_file = open('/nomad/nomad/tests/core/master/links_test.json')
         node_profiling_info = json.load(node_profiling_file)    # Dict of {'node_id': {'C': int}}
         link_profiling_info = json.load(link_profiling_file)     # List of link objects [Link()..]
         # Replace with reading from file.

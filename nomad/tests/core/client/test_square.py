@@ -37,3 +37,7 @@ class TestClient(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+"python ../../../core/client/client_launcher.py source_op http://127.0.0.1:10000 --operator_path ../master/generate_random_int.pickle --debug --is_first --next_op_addr http://127.0.0.1:20208"
+"python ../../../core/client/client_launcher.py op1 http://127.0.0.1:10000 --rpc_port 20208 --operator_path ../master/square_op.pickle --debug --next_op_addr http://127.0.0.1:20209"
+"python ../../../core/client/client_launcher.py final_op http://127.0.0.1:10000 --rpc_port 20209 --operator_path ../master/square_op.pickle --debug --is_final"

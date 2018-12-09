@@ -19,5 +19,27 @@
                 "order": 2,
                 "cloud_execution_time": 1,
                 "output_msg_size": 1
+        },
+
+        "demo-3": {
+                "label": "inference",
+                "order": 3,
+                "cloud_execution_time": 1,
+                "output_msg_size": 1
+        },
+
+
+        "bench-0": {
+                "label": "messagegen",
+                "order": 0,
+                "cloud_execution_time": 10,
+                "output_msg_size": 1
+        },
+
+        "bench-1": {
+                "label": "noop",
+                "order": 1,
+                "cloud_execution_time": 1,
+                "output_msg_size": 1
         }
 }

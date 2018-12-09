@@ -36,6 +36,13 @@ RUN mkdir -p /nomad/logs/
 # Expose the RPC Ports
 EXPOSE 30000 31000 20000 10000
 
+RUN  apt-get update \
+  && apt-get install -y software-properties-common\
+  && add-apt-repository ppa:ubuntu-toolchain-r/test -y\
+  && apt-get update\
+  && apt-get install -y libstdc++6\
+  && rm -rf /var/lib/apt/lists/*
+
 # Add nomad src
 ADD nomad /nomad/nomad
 ENV PYTHONPATH /nomad/:$PYTHONPATH

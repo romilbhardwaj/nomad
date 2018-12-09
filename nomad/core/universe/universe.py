@@ -107,9 +107,10 @@ class Universe(object):
         #TODO: remove pid input
         pipeline = self.pipelines[pid]
         for op_id, operator_profile in pipeline_profiling_info.items():
-            operator = self.operators[op_id]
-            for key, val in operator_profile.items():
-                setattr(operator, '_'+key, val)
+            if op_id in self.operators:
+                operator = self.operators[op_id]
+                for key, val in operator_profile.items():
+                    setattr(operator, '_'+key, val)
 
     def create_cluster(self, node_list_from_kubernetes):
         self.cluster = Cluster.create_cluster(node_list_from_kubernetes)

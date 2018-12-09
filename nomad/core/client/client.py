@@ -40,7 +40,7 @@ sys.stderr = LoggerWriter(logger.warning)
 
 class NomadClient(object):
     class OperatorThread(threading.Thread):
-        def __init__(self, incoming_queue, outgoing_queue, operator_func, is_first_operator):
+        def __init__(self, incoming_queue, outgoing_queue, operator_func, is_first_operator, is_final_operator):
             threading.Thread.__init__(self)
             self.daemon = False
 
@@ -48,21 +48,31 @@ class NomadClient(object):
             self.outgoing_queue = outgoing_queue
             self.operator_func = operator_func
             self.is_first_operator = is_first_operator
+            self.is_final_operator = is_final_operator
 
         def work(self):
             while (True):
+                message_start_timestamp = None
                 if not self.is_first_operator:
-                    message_dict = self.incoming_queue.get()  # Block, else run the generator op.
-                    message = Message(**message_dict)
-                    logger.info("Processing message in operator.")
+                    logger.info("OpThread: Blocked on incoming queue.")
+                    message = self.incoming_queue.get()  # Block, else run the generator op.
+                    logger.info("OpThread: UNBlocked on incoming queue.")
+                    message_start_timestamp = message.start_timestamp
                     args = message.get_args()
                 else:
                     logger.info("This is the first operator, sleeping for 1s before working.")
                     args = []
                     time.sleep(1)
-                output_message = Message(self.operator_func(*args))
-                logger.info("Operator result = %s." % output_message)
-                self.outgoing_queue.put(output_message)
+                op_start_time = time.time()
+                if not self.is_first_operator:
+                    op_result = self.operator_func(args) # REMOVED THE STAR (*args)
+                else:
+                    op_result = self.operator_func()
+                op_end_time = time.time()
+                output_message = Message(op_result, start_timestamp=message_start_timestamp)
+                if not self.is_final_operator:
+                    self.outgoing_queue.put(output_message)
+                logger.info("Operator result = %.10s (truncated), time taken = %f. Current out queue size = %d" % (output_message, (op_end_time - op_start_time), self.outgoing_queue.qsize()))
 
         def run(self):
             self.work()
@@ -90,9 +100,14 @@ class NomadClient(object):
                 if ready:
                     logger.info("Next operator is ready, starting forwarding loop.")
                     while (1):
+                        logger.info("FWDThread: Blocked on outgoing queue.")
                         out_message = self.outgoing_queue.get()  # This is a blocking call
-                        logger.info("Forwarding message to next operator.")
+                        logger.info("FWDThread: UNBlocked on outgoing queue, forwarding message to next operator.")
+                        if not out_message.start_timestamp: # It's the first operator sending the message
+                            out_message.start_timestamp = time.time()
+                        logger.info("FWDThread: Trying to submit message over RPC")
                         self.next_operator_rpc_proxy.submit_message(out_message)
+                        logger.info("FWDThread: Message submitted over RPC")
 
         def run(self):
             if not self.is_final_operator:
@@ -161,7 +176,7 @@ class NomadClient(object):
         # Init RPC Server
         methods_to_register = [self.submit_message, self.ready_check]
         logger.info("Creating client RPC server with the port %d" % self.client_rpc_port)
-        self.rpcserver = RPCServerThread(methods_to_register, self.client_rpc_port, multithreaded=False)
+        self.rpcserver = RPCServerThread(methods_to_register, self.client_rpc_port, multithreaded=True)
         self.rpcserver.start()  # Run RPC server in separate thread
 
         # Test if RPC server is alive. Wait if it isn't.
@@ -182,7 +197,7 @@ class NomadClient(object):
         # Start threads.
         logger.info("Launching opreator thread.")
         self.opreator_thread = self.OperatorThread(self.incoming_queue, self.outgoing_queue, self.operator_func,
-                                                   self.is_first_operator)
+                                                   self.is_first_operator, self.is_final_operator)
         self.opreator_thread.start()
 
         logger.info("Launching forwarding thread with next_operator_addr: %s" % str(self.next_op_addr))
@@ -204,9 +219,12 @@ class NomadClient(object):
         logger.info("Notifying server onalive.")
         self.master_rpc_proxy.register_client_onalive(self.guid)
 
-    def submit_message(self, message):
-        logger.info("Recieved message, appending to queue. : %s" % str(message))
+    def submit_message(self, message_dict):
+        message = Message(**message_dict)
+        logger.info("Recieved message. Total time since start = %f." % (time.time() - message.start_timestamp))
+        logger.info("Content: %.10s (truncated)" % str(message))
         self.incoming_queue.put(message)
+        logger.info("Incoming Queue size: %d" % self.incoming_queue.qsize())
 
     def ready_check(self):
         return True
