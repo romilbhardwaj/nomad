@@ -2,14 +2,14 @@
 {
         "from": "romilbx1yoga",
         "to": "raspberrypi",
-        "bandwidth": 5,
-        "latency": 0.05
+        "bandwidth": 1000000,
+        "latency": 0.3
 
 },
 {
         "from": "raspberrypi",
         "to": "romilbx1yoga",
-        "bandwidth": 10,
-        "latency": 0.05
+        "bandwidth": 1000000,
+        "latency": 0.3
 }
 ]

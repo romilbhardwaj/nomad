@@ -220,8 +220,9 @@ class NomadClient(object):
         self.master_rpc_proxy.register_client_onalive(self.guid)
 
     def submit_message(self, message_dict):
+        logger.info("Recieved message.")
         message = Message(**message_dict)
-        logger.info("Recieved message. Total time since start = %f." % (time.time() - message.start_timestamp))
+        logger.info("Total time since start = %f." % (time.time() - message.start_timestamp))
         logger.info("Content: %.10s (truncated)" % str(message))
         self.incoming_queue.put(message)
         logger.info("Incoming Queue size: %d" % self.incoming_queue.qsize())

@@ -6,8 +6,8 @@ class Operator:
         self.guid = guid
         self._label = l #Name of operator
         self._fn_file = fn_file
-        self._cloud_execution_time = t #Time to execute the operator in a cloud environment on a typical workload. Measured in milliseconds
-        self._output_msg_size = s # Size of operator output in Kilobytes assuming a typical input.
+        self._cloud_execution_time = t #Time to execute the operator in a cloud environment on a typical workload. Measured in seconds
+        self._output_msg_size = s # Size of operator output in bytes assuming a typical input.
         self._next = None # GUID of next op in pipeline
         self._op_instances = []
         self.is_first = is_first
@@ -22,8 +22,8 @@ class Operator:
     def cloud_execution_time(self):
         return self._cloud_execution_time
     
-    def msg_size_bits(self):
-        return self._output_msg_size * pow(10, 3) * 8
+    def msg_size_bytes(self):
+        return self._output_msg_size
 
     def set_cloud_execution_time(self, t):
         self._cloud_execution_time = t
