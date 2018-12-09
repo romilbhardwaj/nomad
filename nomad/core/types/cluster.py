@@ -2,6 +2,9 @@ import networkx as nx
 import  json
 from nomad.core.graph.node import Node
 from nomad.core.graph.link import Link
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Cluster(object):
     def __init__(self, graph=None):
@@ -84,8 +87,8 @@ class Cluster(object):
                 self.graph[l['from']][l['to']][0]['link'] = link
 
             except Exception as e:
-                print(e)
-                print('Could not update link between node %s and %s' % (l['from'], l['to']) )
+                logger.exception(e)
+                logger.warning('Could not update link between node %s and %s' % (l['from'], l['to']) )
 
 
     def update_nodes(self, nodes_dict):
@@ -95,8 +98,8 @@ class Cluster(object):
                self.graph.node[k]['node'] = node
 
            except Exception as e:
-               print(e)
-               print('Could not update node %s' % k)
+               logger.exception(e)
+               logger.warning('Could not update node %s' % k)
 
 
     def get_node(self, label):

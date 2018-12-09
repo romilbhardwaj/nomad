@@ -1,6 +1,6 @@
 [
 {
-        "from": "romilx1yoga",
+        "from": "romilbx1yoga",
         "to": "raspberrypi",
         "bandwidth": 5,
         "latency": 0.05
@@ -8,7 +8,7 @@
 },
 {
         "from": "raspberrypi",
-        "to": "romilx1yoga",
+        "to": "romilbx1yoga",
         "bandwidth": 10,
         "latency": 0.05
 }

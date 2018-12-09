@@ -1,9 +1,11 @@
 {
-        "romilx1yoga": {
-          "C": 1.0
+        "romilbx1yoga": {
+          "C": 1.0,
+          "architecture": "x86"
         },
 
         "raspberrypi": {
-          "C": 0.1
+          "C": 0.1,
+          "architecture": "rpiarm"
         }
 }

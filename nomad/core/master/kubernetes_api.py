@@ -141,7 +141,7 @@ class KubernetesAPI(object):
         container_ports = [V1ContainerPort(container_port=30000, name="rpc")]
 
         security_capabilites = V1Capabilities()
-        security_capabilites.add = ['SYS_PTRACE']
+        security_capabilites.add = ['SYS_PTRACE', 'SYS_ADMIN']
         security_context = V1SecurityContext(allow_privilege_escalation=True,
                                              privileged=True,
                                              capabilities=security_capabilites)
