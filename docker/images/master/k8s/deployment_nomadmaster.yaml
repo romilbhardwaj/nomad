@@ -16,7 +16,7 @@ spec:
       containers:
       - name: nomadmaster
         image: romilb/nomad_master
-        imagePullPolicy: Always
+        imagePullPolicy: Never
         ports:
         - containerPort: 31000
         env:
