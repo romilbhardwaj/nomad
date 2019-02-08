@@ -163,9 +163,11 @@ class Master(object):
     def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
-    def submit_pipeline(self, fns, start, end, pipeline_id):
-        logger.info("Submit_pipeline is called with params fns=%s, start=%s, end=%s, pipeline_id=%s." % (str(fns), str(start), str(end), str(pipeline_id)))
-        pipeline_id = self.universe.add_pipeline(fns, start, end, pipeline_id)
+    def submit_pipeline(self, images, start, end, pipeline_id):
+        #fns: list of image ids
+        #
+        logger.info("Submit_pipeline is called with params fns=%s, start=%s, end=%s, pipeline_id=%s." % (str(images), str(start), str(end), str(pipeline_id)))
+        pipeline_id = self.universe.add_pipeline(images, start, end, pipeline_id)
         logger.info("Pipeline %s added to universe, now profiling." % str(pipeline_id))
         pipeline_profiling_info = self.profile_pipeline(self.universe.get_pipeline(pipeline_id))
         self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
@@ -215,6 +217,21 @@ class Master(object):
             node = self.universe.get_node(operator_instance.node_id)
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
+
+    def receive_pipeline(self, ops, start, end, pid):
+        #TODO: we dont know pid at this point right?
+        images = []
+        for i, op_pickle in enumerate(ops):
+            op_file = write_to_file(op_pickle, '/tmp/op_%d' % i)
+            docker_image = docker.image(base='nomad_client_base')
+            docker_image.add_file(op_file, '/nomad/op_%d_pickle' % i)
+            docker_image.compile()
+            img_name = "%s_op_%d_img" % (pid, i))
+            docker_image.push(name= img_name)
+            images.append(img_name)
+
+        self.submit_pipeline(images, start, end, pid)
+
 
 if __name__ == '__main__':
     master = Master()
