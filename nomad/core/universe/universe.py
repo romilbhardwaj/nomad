@@ -35,14 +35,14 @@ class Universe(object):
     def generate_guid():
         return str(uuid.uuid4())
 
-    def add_pipeline(self, fns, start, end, id=''):
+    def add_pipeline(self, images, start, end, id=''):
         #new pid
         pid = self.generate_guid() if id == '' else id
 
         #create operators
         operators = []
-        for i, fn in enumerate(fns):
-            if i == len(fns) - 1:
+        for i, fn in enumerate(images):
+            if i == len(images) - 1:
                 next_op_id = None
             else:
                 next_op_id = pid + "-" + str(i+1)
@@ -54,10 +54,10 @@ class Universe(object):
             if i == 0:
                 logger.info("Hit is first!")
                 is_first = True
-            if i == (len(fns) - 1):
+            if i == (len(images) - 1):
                 logger.info("Hit is final!")
                 is_final = True
-            op = Operator(fn_file=fn, guid=op_id, is_final=is_final, is_first=is_first)
+            op = Operator(fn_image=fn, guid=op_id, is_final=is_final, is_first=is_first)
             op._next = next_op_id
             operators.append(op_id)
             self.operators[op_id] = op
