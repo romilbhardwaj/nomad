@@ -4,6 +4,8 @@ import threading
 import time
 import sys
 import json
+import docker
+import shutil
 from nomad.core.config import CONSTANTS, ClientConfig
 from nomad.core.master.kubernetes_api import KubernetesAPI
 from nomad.core.placement.minlatsolver import RecMinLatencySolver
@@ -219,19 +221,35 @@ class Master(object):
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
 
     def receive_pipeline(self, ops, start, end, pid):
-        #TODO: we dont know pid at this point right?
+        #TODO: remeber to register this function with the rpc server.
+        def write_to_file(binary_obj, path):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'wb') as f:
+                f.write(binary_obj.data)
+
+        #create client
+        client = docker.from_env()
         images = []
         for i, op_pickle in enumerate(ops):
-            op_file = write_to_file(op_pickle, '/tmp/op_%d' % i)
-            docker_image = docker.image(base='nomad_client_base')
-            docker_image.add_file(op_file, '/nomad/op_%d_pickle' % i)
-            docker_image.compile()
-            img_name = "%s_op_%d_img" % (pid, i))
-            docker_image.push(name= img_name)
-            images.append(img_name)
+            #Writing file to local storage
+            #copy dockerfile to tmp
+            shutil.copy('/nomad/images/client/Dockerfile', '/tmp/Dockerfile')
+
+            #Write pickle to tmp
+            file_name = '/tmp/op_%d/op.pickle' % i
+            write_to_file(op_pickle,file_name)
+
+            #TODO: the docker repo should be loaded from a config file
+            tag = "alvinghouas/%s_op_%d_img" % (pid, i)
+
+            #build image using client base image
+            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name})
+
+            #push image to docker hub
+            client.images.push(repository=tag)
+            images.append(tag)
 
         self.submit_pipeline(images, start, end, pid)
-
 
 if __name__ == '__main__':
     master = Master()
