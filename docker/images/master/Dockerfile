@@ -38,6 +38,8 @@ EXPOSE 30000 31000 20000 10000
 
 # Add nomad src
 ADD nomad /nomad/nomad
+ADD docker/images/client/Dockerfile /nomad/images/client/Dockerfile
+
 ENV PYTHONPATH /nomad/:$PYTHONPATH
 
 # CMD ["/bin/bash"]
