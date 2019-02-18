@@ -1,5 +1,5 @@
 FROM ubuntu:16.04
-
+ARG python_pickle_path
 # Update apt and install wget
 RUN  apt-get update \
   && apt-get install -y wget libopenmpi-dev wget nano bzip2\
@@ -47,6 +47,7 @@ RUN  apt-get update \
 ADD nomad /nomad/nomad
 ENV PYTHONPATH /nomad/:$PYTHONPATH
 
+ADD python_pickle_path /nomad/operator.pickle
 # CMD ["/bin/bash"]
 # Run the python script
 CMD ["python", "/nomad/nomad/core/client/client_envvar_launcher.py"]
