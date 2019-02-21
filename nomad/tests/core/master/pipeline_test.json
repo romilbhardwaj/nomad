@@ -17,7 +17,7 @@
         "demo-2": {
                 "label": "face_detect",
                 "order": 2,
-                "cloud_execution_time": 10,
+                "cloud_execution_time": 50,
                 "output_msg_size": 10000
         },
 
