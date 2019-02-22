@@ -2,8 +2,11 @@ FROM ubuntu:16.04
 
 # Update apt and install wget
 RUN  apt-get update \
-  && apt-get install -y wget libopenmpi-dev wget nano bzip2\
+  && apt-get install -y wget libopenmpi-dev wget nano bzip2 docker.io\
   && rm -rf /var/lib/apt/lists/*
+
+# Expose docker socket volume
+# VOLUME /var/run/docker.sock
 
 #Install conda
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \

@@ -15,10 +15,20 @@ spec:
     spec:
       containers:
       - name: nomadmaster
-        image: romilb/nomad_master
-        imagePullPolicy: Never
+        image: lab11nomad/master:latest
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-sock-volume
         ports:
         - containerPort: 31000
         env:
         - name: USE_INCLUSTER_AUTH
           value: "True"
+      volumes:
+      - name: docker-sock-volume
+        hostPath:
+          path: /var/run/docker.sock
+          type: File

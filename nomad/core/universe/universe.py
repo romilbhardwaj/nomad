@@ -121,7 +121,7 @@ class Universe(object):
         '''
         operator = self.get_operator(operator_guid)
         op_inst_guid = operator.get_op_inst_guid()  # Get a GUID for the operator instance
-        kwargs['operator_path'] = os.path.join(ClientConfig.OPERATOR_BASE_PATH, operator._fn_file + ".pickle")
+        kwargs['operator_path'] = os.path.join(ClientConfig.DEAFULT_OPERATOR_PATH)
         kwargs['is_first'] = operator.is_first
         kwargs['is_final'] = operator.is_final
         logging.info("Using operator path %s to create operator instance %s object" % (kwargs['operator_path'], op_inst_guid))

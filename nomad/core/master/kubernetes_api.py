@@ -40,12 +40,15 @@ class KubernetesAPI(object):
                                                           ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, architecture=Architectures.x86):
         k8s_service = self.launch_kube_service(op_inst, ports, namespace)
 
+        # TODO: Use multiple arch images.
+        '''
         if architecture == Architectures.x86:
             image = ClientDockerImages.x86
         elif architecture == Architectures.rpiarm:
             image = ClientDockerImages.rpiarm
         else:
             raise Exception("Unknown architecture %s" % str(architecture))
+        '''
         k8s_job = self.launch_kube_job(op_inst, image, namespace=namespace)
         return k8s_service, k8s_job
 

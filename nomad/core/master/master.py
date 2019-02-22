@@ -6,7 +6,7 @@ import sys
 import json
 import docker
 import shutil
-from nomad.core.config import CONSTANTS, ClientConfig
+from nomad.core.config import CONSTANTS, ClientConfig, DockerConfig
 from nomad.core.master.kubernetes_api import KubernetesAPI
 from nomad.core.placement.minlatsolver import RecMinLatencySolver
 from nomad.core.scheduler.KubernetesScheduler import KubernetesScheduler
@@ -80,7 +80,7 @@ class Master(object):
 
         # Init RPC Server
         logger.info("Instantiating RPC server on port %d" % self.master_rpc_port)
-        methods_to_register = [self.submit_pipeline, self.register_client_onalive, self.get_next_op_address]
+        methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address]
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
@@ -231,22 +231,22 @@ class Master(object):
         client = docker.from_env()
         images = []
         for i, op_pickle in enumerate(ops):
-            #Writing file to local storage
-            #copy dockerfile to tmp
+            # TODO: Build multiple arch images
+            # Writing file to local storage, copy dockerfile to tmp
             shutil.copy('/nomad/images/client/Dockerfile', '/tmp/Dockerfile')
 
             #Write pickle to tmp
             file_name = '/tmp/op_%d/op.pickle' % i
-            write_to_file(op_pickle,file_name)
+            write_to_file(op_pickle, file_name)
 
             #TODO: the docker repo should be loaded from a config file
-            tag = "alvinghouas/%s_op_%d_img" % (pid, i)
+            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
 
             #build image using client base image
-            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name})
+            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name}, rm=True)
 
             #push image to docker hub
-            client.images.push(repository=tag)
+            push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME, 'password': DockerConfig.PASSWORD})
             images.append(tag)
 
         self.submit_pipeline(images, start, end, pid)
