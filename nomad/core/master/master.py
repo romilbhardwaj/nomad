@@ -233,7 +233,7 @@ class Master(object):
         for i, op_pickle in enumerate(ops):
             # TODO: Build multiple arch images
             # Writing file to local storage, copy dockerfile to tmp
-            shutil.copy('/nomad/images/client/Dockerfile', '/tmp/Dockerfile')
+            shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
 
             #Write pickle to tmp
             file_name = '/tmp/op_%d/op.pickle' % i

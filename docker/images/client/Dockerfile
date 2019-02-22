@@ -47,7 +47,7 @@ RUN  apt-get update \
 ADD nomad /nomad/nomad
 ENV PYTHONPATH /nomad/:$PYTHONPATH
 
-ADD python_pickle_path /nomad/operator.pickle
+#ADD python_pickle_path /nomad/operator.pickle
 # CMD ["/bin/bash"]
 # Run the python script
 CMD ["python", "/nomad/nomad/core/client/client_envvar_launcher.py"]

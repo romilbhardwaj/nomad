@@ -1,0 +1,2 @@
+FROM lab11noamd/client:latest
+ADD python_pickle_path /nomad/operator.pickle
