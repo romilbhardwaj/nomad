@@ -115,7 +115,7 @@ class Master(object):
     def profile_cluster(self, cluster):
         #TODO: read from file
         is_aws = False
-        is_e2e = True
+        is_e2e = False
         if is_aws:
             node_profiling_file = open('/nomad/nomad/tests/core/master/nodes_aws.json')
             link_profiling_file = open('/nomad/nomad/tests/core/master/links_aws.json')
@@ -217,7 +217,8 @@ class Master(object):
         operator_instances.reverse()
         for operator_instance in operator_instances:
             node = self.universe.get_node(operator_instance.node_id)
-            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, architecture=node._architecture)
+            image = self.universe.get_operator(operator_instance.operator_guid)._fn_image
+            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
 
     def receive_pipeline(self, ops, start, end, pid):
@@ -236,14 +237,19 @@ class Master(object):
             shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
 
             #Write pickle to tmp
-            file_name = '/tmp/op_%d/op.pickle' % i
+            base_dir = '/tmp/op_%d/' % i
+            file_name = base_dir + 'operator.pickle'
+            logger.info("Saving pickle file to %s" % file_name)
             write_to_file(op_pickle, file_name)
 
             #TODO: the docker repo should be loaded from a config file
             tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
 
             #build image using client base image
-            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name}, rm=True)
+            build_src_path = '/tmp'
+            pickle_rel_path = os.path.relpath(file_name, build_src_path)
+            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': pickle_rel_path}, rm=True)
+            logger.info("Build result: \n%s" % str(docker_image))
 
             #push image to docker hub
             push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME, 'password': DockerConfig.PASSWORD})

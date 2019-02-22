@@ -37,7 +37,7 @@ class KubernetesAPI(object):
 
 
     def create_kube_service_and_job(self, op_inst, ports=[["nomadmaster", 31000, 31000], ["nomadclient", 30000, 30000],
-                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, architecture=Architectures.x86):
+                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, image=None, architecture=Architectures.x86):
         k8s_service = self.launch_kube_service(op_inst, ports, namespace)
 
         # TODO: Use multiple arch images.
@@ -157,7 +157,7 @@ class KubernetesAPI(object):
         container = client.V1Container(name=name, image=image, tty=True,
                                        env=container_envs, ports=container_ports,
                                        volume_mounts=volume_mounts, security_context=security_context,
-                                       image_pull_policy="Never")
+                                       image_pull_policy="IfNotPresent")
         return container
 
     def _create_kube_service(self, k8s_id, ports, namespace=KubernetesConfig.K8S_NAMESPACE):

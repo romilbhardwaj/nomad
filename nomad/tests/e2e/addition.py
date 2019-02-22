@@ -16,4 +16,4 @@ def source():
 fns = [source, square]
 end = "kube-master"
 start = "kube-node-1"
-nomad.submit_pipeline(fns, start, end, 'demp', connection_str)
+nomad.submit_pipeline(fns, start, end, 'demo', connection_str)
