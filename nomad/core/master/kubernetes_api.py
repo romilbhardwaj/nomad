@@ -157,7 +157,7 @@ class KubernetesAPI(object):
         container = client.V1Container(name=name, image=image, tty=True,
                                        env=container_envs, ports=container_ports,
                                        volume_mounts=volume_mounts, security_context=security_context,
-                                       image_pull_policy="IfNotPresent")
+                                       image_pull_policy="Always")
         return container
 
     def _create_kube_service(self, k8s_id, ports, namespace=KubernetesConfig.K8S_NAMESPACE):

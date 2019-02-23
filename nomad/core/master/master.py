@@ -239,7 +239,6 @@ class Master(object):
             #Write pickle to tmp
             base_dir = '/tmp/op_%d/' % i
             file_name = base_dir + 'operator.pickle'
-            logger.info("Saving pickle file to %s" % file_name)
             write_to_file(op_pickle, file_name)
 
             #TODO: the docker repo should be loaded from a config file
@@ -248,9 +247,11 @@ class Master(object):
             #build image using client base image
             build_src_path = '/tmp'
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
-            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': pickle_rel_path}, rm=True)
+            logger.info("*****pickle_rel_path******* %s" % pickle_rel_path)
+            docker_image, build_log = client.images.build(tag=tag, path='/tmp', buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True)
             logger.info("Build result: \n%s" % str(docker_image))
-
+            for line in build_log:
+                logger.info(line)
             #push image to docker hub
             push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME, 'password': DockerConfig.PASSWORD})
             images.append(tag)

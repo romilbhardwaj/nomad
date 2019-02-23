@@ -1,5 +1,4 @@
 FROM lab11nomad/client:latest
-
 ARG PYTHON_PICKLE_PATH
-
-ADD $PYTHON_PICKLE_PATH /nomad/operator.py
+RUN echo $PYTHON_PICKLE_PATH
+ADD $PYTHON_PICKLE_PATH /nomad/operator.pickle
