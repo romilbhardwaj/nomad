@@ -166,13 +166,14 @@ class Master(object):
     def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
-    def submit_pipeline(self, images, start, end, pipeline_id):
+    def submit_pipeline(self, images, start, end, pipeline_id, profile=None):
         #fns: list of image ids
         #TODO: add optional arg profiling
         logger.info("Submit_pipeline is called with params fns=%s, start=%s, end=%s, pipeline_id=%s." % (str(images), str(start), str(end), str(pipeline_id)))
         pipeline_id = self.universe.add_pipeline(images, start, end, pipeline_id)
         logger.info("Pipeline %s added to universe, now profiling." % str(pipeline_id))
-        pipeline_profiling_info = self.profile_pipeline(self.universe.get_pipeline(pipeline_id))
+        pipeline_profiling_info = (profile if profile
+                                   else self.profile_pipeline(self.universe.get_pipeline(pipeline_id)))
         self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
@@ -223,7 +224,7 @@ class Master(object):
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
 
 
-    def receive_pipeline(self, ops, start, end, pid):
+    def receive_pipeline(self, ops, start, end, pid, profile=None):
         #Todo: add arg profiling info
         def write_to_file(binary_obj, path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -270,7 +271,7 @@ class Master(object):
 
         logger.info("---Building %d images took %s seconds. ---" % (len(images), time.time() - start_time))
 
-        self.submit_pipeline(images, start, end, pid)
+        self.submit_pipeline(images, start, end, pid, profile)
 
 if __name__ == '__main__':
     master = Master()
