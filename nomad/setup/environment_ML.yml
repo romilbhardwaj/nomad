@@ -1,0 +1,16 @@
+name: nomad 
+channels:
+- conda-forge
+- defaults
+dependencies:
+- python=3.6
+- cloudpickle=0.6.1
+- opencv=3.4.2
+- pandas=0.23.4
+- pip:
+    - pillow==5.3.0
+    - kubernetes==8.0.0b1
+    - networkx==2.2
+    - docker
+    - tensorflow==1.12.0
+    - keras==2.2.4

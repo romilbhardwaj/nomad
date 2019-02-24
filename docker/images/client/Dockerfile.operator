@@ -1,2 +1,4 @@
-FROM lab11noamd/client:latest
-ADD python_pickle_path /nomad/operator.pickle
+FROM lab11nomad/client:latest
+ARG PYTHON_PICKLE_PATH
+RUN echo $PYTHON_PICKLE_PATH
+ADD $PYTHON_PICKLE_PATH /nomad/operator.pickle

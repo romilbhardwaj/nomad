@@ -1,6 +1,7 @@
 import os
 import logging
 import threading
+from multiprocessing import Process
 import time
 import sys
 import json
@@ -115,7 +116,7 @@ class Master(object):
     def profile_cluster(self, cluster):
         #TODO: read from file
         is_aws = False
-        is_e2e = True
+        is_e2e = False
         if is_aws:
             node_profiling_file = open('/nomad/nomad/tests/core/master/nodes_aws.json')
             link_profiling_file = open('/nomad/nomad/tests/core/master/links_aws.json')
@@ -217,12 +218,12 @@ class Master(object):
         operator_instances.reverse()
         for operator_instance in operator_instances:
             node = self.universe.get_node(operator_instance.node_id)
-            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, architecture=node._architecture)
+            image = self.universe.get_operator(operator_instance.operator_guid)._fn_image
+            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
 
 
     def receive_pipeline(self, ops, start, end, pid):
-        #TODO: remeber to register this function witho the rpc server.
         #Todo: add arg profiling info
         def write_to_file(binary_obj, path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -231,44 +232,43 @@ class Master(object):
 
         def build_op_image(opid, pid, pickle):
             shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
-            file_name = '/tmp/op_%d/op.pickle' % opid
+            base_dir = '/tmp/op_%d/' % opid
+            file_name = base_dir + 'operator.pickle'
             write_to_file(pickle, file_name)
             tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
             # build image using client base image
-            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name},
-                                               rm=True)
+            build_src_path = '/tmp'
+            pickle_rel_path = os.path.relpath(file_name, build_src_path)
+            logger.info("*****pickle_rel_path******* %s" % pickle_rel_path)
+            docker_image, build_log = client.images.build(tag=tag, path='/tmp',
+                                                          buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True)
+            logger.info("Build result: \n%s" % str(docker_image))
+            for line in build_log:
+                logger.info(line)
             # push image to docker hub
             push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME,
                                                                           'password': DockerConfig.PASSWORD})
         #create client
         client = docker.from_env()
         images = []
-        threads = []
+        processes = []
+        start_time = time.time()
         for i, op_pickle in enumerate(ops):
             # TODO: Build multiple arch images
-            # Writing file to local storage, copy dockerfile to tmp
-            #shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
-
-            #Write pickle to tmp
-            #file_name = '/tmp/op_%d/op.pickle' % i
-            #write_to_file(op_pickle, file_name)
-
-            #TODO: the docker repo should be loaded from a config file
+            # TODO: the docker repo should be loaded from a config file
+            # TODO: Should we use a process pool instead of spawning a new process for each image?
             tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
             images.append(tag)
-            thread = threading.Thread(target=build_op_image, args=(i, pid, op_pickle))
-            threads.append(thread)
-            #build image using client base image
-            #docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name}, rm=True)
+            p = Process(target=build_op_image, args=(i, pid, op_pickle))
+            processes.append(p)
 
-            #push image to docker hub
-            #push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME, 'password': DockerConfig.PASSWORD})
+        for p in processes:
+            p.start()
 
-        for thread in threads:
-            thread.start()
+        for p in processes:
+            p.join()
 
-        for thread in threads:
-            thread.join()
+        logger.info("---Building %d images took %s seconds. ---" % (len(images), time.time() - start_time))
 
         self.submit_pipeline(images, start, end, pid)
 

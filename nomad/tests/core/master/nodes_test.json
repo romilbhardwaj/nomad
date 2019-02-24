@@ -1,13 +1,16 @@
 {
         "kube-master": {
-          "C": 1.0
+          "C": 1.0,
+          "architecture": "x86"
         },
 
         "kube-node-1": {
-          "C": 0.2
+          "C": 0.2,
+          "architecture": "x86"
         },
 
         "kube-node-2": {
-          "C": 0.7
+          "C": 0.7,
+          "architecture": "x86"
         }
 }

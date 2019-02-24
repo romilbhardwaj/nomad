@@ -94,7 +94,15 @@ class Cluster(object):
     def update_nodes(self, nodes_dict):
         for k,v in nodes_dict.items():
            try:
-               node = Node(label=k, C= v['C'], architecture=v['architecture'])
+               node_label = k
+               compute_capacity = v['C']
+               if 'architecture' not in v:
+                   arch = 'x86'
+                   logger.warning("Architecture not found in specficiation, using default.")
+               else:
+                   arch = v['architecture']
+
+               node = Node(label=node_label, C=compute_capacity, architecture=arch)
                self.graph.node[k]['node'] = node
 
            except Exception as e:
