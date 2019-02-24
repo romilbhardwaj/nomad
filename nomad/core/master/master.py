@@ -231,20 +231,22 @@ class Master(object):
                 f.write(binary_obj.data)
 
         def build_op_image(opid, pid, pickle):
-            shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
-            base_dir = '/tmp/op_%d/' % opid
-            file_name = base_dir + 'operator.pickle'
+            build_src_path = '/tmp/op_%d/' % opid
+            if not os.path.exists(build_src_path):
+                os.mkdir(build_src_path)
+            shutil.copy('/nomad/images/client/Dockerfile.operator', build_src_path + 'Dockerfile')
+            file_name = build_src_path + 'operator.pickle'
+
+            # Save pickle
             write_to_file(pickle, file_name)
-            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
-            # build image using client base image
-            build_src_path = '/tmp'
+
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
-            logger.info("*****pickle_rel_path******* %s" % pickle_rel_path)
-            docker_image, build_log = client.images.build(tag=tag, path='/tmp',
+            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
+            docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True)
-            logger.info("Build result: \n%s" % str(docker_image))
+            logger.debug("Build result: \n%s" % str(docker_image))
             for line in build_log:
-                logger.info(line)
+                logger.debug(line)
             # push image to docker hub
             push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME,
                                                                           'password': DockerConfig.PASSWORD})
@@ -255,7 +257,6 @@ class Master(object):
         start_time = time.time()
         for i, op_pickle in enumerate(ops):
             # TODO: Build multiple arch images
-            # TODO: the docker repo should be loaded from a config file
             # TODO: Should we use a process pool instead of spawning a new process for each image?
             tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
             images.append(tag)
