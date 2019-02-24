@@ -167,7 +167,7 @@ class Master(object):
 
     def submit_pipeline(self, images, start, end, pipeline_id):
         #fns: list of image ids
-        #
+        #TODO: add optional arg profiling
         logger.info("Submit_pipeline is called with params fns=%s, start=%s, end=%s, pipeline_id=%s." % (str(images), str(start), str(end), str(pipeline_id)))
         pipeline_id = self.universe.add_pipeline(images, start, end, pipeline_id)
         logger.info("Pipeline %s added to universe, now profiling." % str(pipeline_id))
@@ -220,34 +220,55 @@ class Master(object):
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
 
+
     def receive_pipeline(self, ops, start, end, pid):
-        #TODO: remeber to register this function with the rpc server.
+        #TODO: remeber to register this function witho the rpc server.
+        #Todo: add arg profiling info
         def write_to_file(binary_obj, path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb') as f:
                 f.write(binary_obj.data)
 
+        def build_op_image(opid, pid, pickle):
+            shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
+            file_name = '/tmp/op_%d/op.pickle' % opid
+            write_to_file(pickle, file_name)
+            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
+            # build image using client base image
+            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name},
+                                               rm=True)
+            # push image to docker hub
+            push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME,
+                                                                          'password': DockerConfig.PASSWORD})
         #create client
         client = docker.from_env()
         images = []
+        threads = []
         for i, op_pickle in enumerate(ops):
             # TODO: Build multiple arch images
             # Writing file to local storage, copy dockerfile to tmp
-            shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
+            #shutil.copy('/nomad/images/client/Dockerfile.operator', '/tmp/Dockerfile')
 
             #Write pickle to tmp
-            file_name = '/tmp/op_%d/op.pickle' % i
-            write_to_file(op_pickle, file_name)
+            #file_name = '/tmp/op_%d/op.pickle' % i
+            #write_to_file(op_pickle, file_name)
 
             #TODO: the docker repo should be loaded from a config file
             tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
-
+            images.append(tag)
+            thread = threading.Thread(target=build_op_image, args=(i, pid, op_pickle))
+            threads.append(thread)
             #build image using client base image
-            docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name}, rm=True)
+            #docker_image = client.images.build(tag=tag, path='/tmp', buildargs={'python_pickle_path': file_name}, rm=True)
 
             #push image to docker hub
-            push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME, 'password': DockerConfig.PASSWORD})
-            images.append(tag)
+            #push_result = client.images.push(repository=tag, auth_config={'username': DockerConfig.USERNAME, 'password': DockerConfig.PASSWORD})
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
 
         self.submit_pipeline(images, start, end, pid)
 
