@@ -5,7 +5,7 @@ Modern IoT applications are computationally monolithic and built assuming a "fla
 Nomad supports applications that are designed as pipelines, where the output can be expressed as a sequence of independent transformations on the input. For instance, a face recognition  pipeline ingests a frame, performs pre-processing (pixel normalization), detects faces using a statistical model, and then applies a deep neural network to infer the identity of the person.
 
 Such pipelines can be easily partitioned with Nomad. For instance, consider a pipeline which generates a random number at the source node, squares it, and writes it to a file. A monolithic program would express it something like this:
-```
+```python
 # This method is invoked periodically
 def pipeline():
     import random
@@ -19,7 +19,7 @@ However, distributing this program across multiple machines would be complex, re
 
 Nomad makes this process easier. A similar pipeline in Nomad would look like this:
 
-```
+```python
 import nomad
 
 NOMAD_MASTER = "http://127.0.0.1:30000"
@@ -47,6 +47,7 @@ pipeline_id = 'test'
 
 # Submit the pipeline to the nomad master.
 # This will make latency and compute aware placement decisions and instantiate the pipeline.
+
 nomad.submit_pipeline(operators, start_node, end_node, pipeline_id, connection_str = NOMAD_MASTER)
 ```
 
