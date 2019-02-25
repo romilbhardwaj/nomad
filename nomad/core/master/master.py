@@ -225,7 +225,6 @@ class Master(object):
 
 
     def receive_pipeline(self, ops, start, end, pid, profile=None):
-        #Todo: add arg profiling info
         def write_to_file(binary_obj, path):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'wb') as f:
