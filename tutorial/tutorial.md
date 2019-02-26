@@ -18,7 +18,7 @@ This should pull the latest tutorial image and launch the container.
 ## Step 1 - Setting up the Virtual Cluster
 Nomad uses Kubernetes to orchestrate and schedule pipelines. In deployment this cluster would span across machines on the edge and the cloud, but for this tutorial we'll be creating a virtual cluster locally on our machines. For this, we will be using [kubeadm-dind-cluster](https://github.com/kubernetes-sigs/kubeadm-dind-cluster), a utility which creates kubernetes nodes as local docker containers. To use this, simply run:
 ```bash
-cd ../docker/images/master/k8s
+cd docker/images/master/k8s
 
 # Run the script
 chmod +x dind-cluster-v1.12.sh
