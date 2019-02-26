@@ -75,26 +75,11 @@ replicaset.apps/nomadmaster-deployment-988dbdb4f   1         1         0       5
 
 To check the detailed status of the pod, you can run `kubectl describe pod <pod name>`.
 
-To access the nomad master from localhost, we would need to setup port-forwarding from the local machine to the nomad service inside the virtual kubernetes cluster. To do this, open a new shell and run:
-```bash
-kubectl port-forward svc/nomadmaster-service 30000:30000
-```
-This binds port 30000 on localhost to port 30000 on the nomad master service. Verify that you can connect to the nomad master by running:
-```bash
-curl 127.0.0.1:30000
-# This should return a HTTP message with the NOT_IMPLEMENTED flag
-```
-## Step 3 - Installing the client libraries
+## Step 3 - Get shell access to a terminal in the virtual cluster
 
-To interface with the master service, nomad provides a client library that exposes a pipeline submission interface. Install it by invoking setup.py at the repo root:
+For the purposes of this tutorial, we will use the python interpreter in the nomad master container. To gain shell access to the nomad master, run:
 ```bash
-python setup.py install
-```
-
-Check if the installation succeeded with:
-```bash
-python -c "import nomad;print(nomad.__version__)"
-# Output: 0.1a
+kubectl exec -it $(kubectl get pod -l "app=nomadmaster" -o jsonpath='{.items[0].metadata.name}') -- bash
 ```
 
 

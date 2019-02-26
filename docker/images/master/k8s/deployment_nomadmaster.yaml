@@ -24,6 +24,7 @@ spec:
           name: docker-sock-volume
         ports:
         - containerPort: 31000
+        - containerPort: 30000
         env:
         - name: USE_INCLUSTER_AUTH
           value: "True"

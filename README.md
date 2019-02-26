@@ -44,7 +44,6 @@ start_node = "my_edge_device"
 end_node = "my_cloud_VM"
 
 pipeline_id = 'test'
-
 # Submit the pipeline to the nomad master.
 # This will make latency and compute aware placement decisions and instantiate the pipeline.
 
