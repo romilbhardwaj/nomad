@@ -4,6 +4,7 @@ This tutorial will introduce you to the Nomad programming model. We will start b
 ## Step 0 - Prerequisites
 * [Docker 18.09 or above](https://docs.docker.com/install/)
 * Python 3 or above
+* Nomad repository `git clone https://github.com/romilbhardwaj/nomad.git`
 
 <!---## Step 1 - Launch the Tutorial Container
 We will be running this tutorial inside a docker container which has nomad dependencies pre-installed. To launch the container, run:
