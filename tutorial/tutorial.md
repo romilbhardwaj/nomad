@@ -145,3 +145,9 @@ tail -f /tmp/output.txt
 ```
 
 ## Conclusion
+Cleanup:
+```bash
+./dind-cluster-v1.12.sh clean
+docker rm --force $(docker ps -aq)
+docker rmi $(docker images -q)
+```
