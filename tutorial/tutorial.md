@@ -101,6 +101,7 @@ def write_to_file(x):
     # Analogous to writing to a database - this can be a remote call
     with open("/tmp/output.txt", 'a') as f:
         f.write(str(x) + "\n")
+    return x
 
 # Declare the sequence of operators in a list
 operators = [source, square, write_to_file]
@@ -128,12 +129,14 @@ start_node = "kube-node-1"
 end_node = "kube-master"
 
 #Specify a pipline name here:
-pipeline_id = # For instance, "demo"
+pipeline_id = "demo" # For instance, "demo"
  
 # Submit the pipeline to the nomad master.
 # This will make latency and compute aware placement decisions and instantiate the pipeline.
 
-nomad.submit_pipeline(operators, start_node, end_node, pipeline_id, master_ip = "http://127.0.0.1:30000", profile=profiling)
+conn_str = "http://127.0.0.1:30000"
+ops = nomad.submit_pipeline(operators, start_node, end_node, pipeline_id, master_conn_str = conn_str, profile=profiling)
+result = nomad.get_last_output(ops[-1], master_conn_str = conn_str)
 ```
 
 This should launch the pipeline. You can verify it's functioning by inspecting the result of the final operator, `write_to_file`. This can be done by inspecting the file written by the operator:
@@ -145,9 +148,4 @@ tail -f /tmp/output.txt
 ```
 
 ## Conclusion
-Cleanup:
-```bash
-./dind-cluster-v1.12.sh clean
-docker rm --force $(docker ps -aq)
-docker rmi $(docker images -q)
-```
+To cleanup, run `docker\images\master\k8s\tutorial_shutdown.sh`.

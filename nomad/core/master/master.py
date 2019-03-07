@@ -81,7 +81,7 @@ class Master(object):
 
         # Init RPC Server
         logger.info("Instantiating RPC server on port %d" % self.master_rpc_port)
-        methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address]
+        methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address, self.get_last_output]
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
@@ -178,9 +178,9 @@ class Master(object):
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
         logger.info("Pipeline %s schedule computed! Now instantiating.." % str(pipeline_id))
-        status = self.instantiate_pipeline(pipeline_id)
+        operator_instances = self.instantiate_pipeline(pipeline_id)
         logger.info("Pipeline %s instantiated!" % str(pipeline_id))
-        return pipeline_id if status != -1 else -1
+        return operator_instances
 
     def schedule(self, pipeline_guid):
         logger.info("Trying to schedule pipeline %s" % str(pipeline_guid))
@@ -222,6 +222,7 @@ class Master(object):
             image = self.universe.get_operator(operator_instance.operator_guid)._fn_image
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
+        return operator_instances
 
 
     def receive_pipeline(self, ops, start, end, pid, profile=None):
@@ -243,7 +244,7 @@ class Master(object):
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
             tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
-                                                          buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True)
+                                                          buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
             for line in build_log:
                 logger.debug(line)
@@ -271,7 +272,12 @@ class Master(object):
 
         logger.info("---Building %d images took %s seconds. ---" % (len(images), time.time() - start_time))
 
-        self.submit_pipeline(images, start, end, pid, profile)
+        op_instances = self.submit_pipeline(images, start, end, pid, profile)
+        return [op.guid for op in op_instances]
+
+    def get_last_output(self, op_id):
+        return self.universe.get_operator_instance(op_id).get_last_output()
+
 
 if __name__ == '__main__':
     master = Master()

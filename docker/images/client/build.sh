@@ -1,3 +1,4 @@
-docker build -t romilb/nomad_client:latest -f docker/images/client/Dockerfile .
-docker tag romilb/nomad_client:latest romilb/nomad_client:latest
-docker push romilb/nomad_client:latest
+#!/usr/bin/env bash
+docker build -t lab11nomad/client:latest -f docker/images/client/Dockerfile .
+docker tag lab11nomad/client:latest lab11nomad/client:latest
+docker push lab11nomad/client:latest
