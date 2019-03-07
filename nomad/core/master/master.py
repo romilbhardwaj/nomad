@@ -81,7 +81,9 @@ class Master(object):
 
         # Init RPC Server
         logger.info("Instantiating RPC server on port %d" % self.master_rpc_port)
-        methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address]
+        methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address, self.update_pipeline_profiling,
+                               self.update_cluster_profiling, self.update_node_profiling, self.update_network_profiling, self.get_node_profiling]
+
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
@@ -166,6 +168,9 @@ class Master(object):
     def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
+    def submit_node_profiling(self, node_profile):
+        self.universe.update_node_profiling(node_profile)
+
     def submit_pipeline(self, images, start, end, pipeline_id, profile=None):
         #fns: list of image ids
         #TODO: add optional arg profiling
@@ -209,6 +214,22 @@ class Master(object):
         profiling_info = json.load(profiling_info_file)
         profiling_info_file.close()
         return profiling_info
+
+    def update_pipeline_profiling(self, pid, new_profile):
+        self.submit_pipeline_profiling(pid, new_profile)
+
+    def update_cluster_profiling(self, new_network_profile, new_node_profile):
+        self.submit_network_profiling(new_network_profile)
+        self.submit_node_profiling(new_node_profile)
+
+    def update_node_profiling(self, new_node_profile):
+        self.submit_node_profiling(new_node_profile)
+
+    def update_network_profiling(self, new_network_profile):
+        self.submit_network_profiling(new_network_profile)
+
+    def get_node_profiling(self):
+        return self.universe.get_node_profile()
 
     def instantiate_pipeline(self, pipeline_id):
         pipeline = self.universe.get_pipeline(pipeline_id)
