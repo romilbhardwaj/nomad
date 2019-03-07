@@ -145,5 +145,8 @@ class Universe(object):
         '''
         self.cluster.update_nodes(node_profiling_info)
 
+    def get_node_profiling(self):
+        return self.cluster.get_node_profiling()
+
     def get_node(self, label):
         return self.cluster.get_node(label)

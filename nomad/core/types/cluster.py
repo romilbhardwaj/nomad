@@ -109,6 +109,16 @@ class Cluster(object):
                logger.exception(e)
                logger.warning('Could not update node %s' % k)
 
+    def get_node_profiling(self):
+        # TODO: this should be a dict of dicts instead.
+        return [self.get_node_profile(n) for n in self.graph.nodes]
+
+
+    def get_node_profile(self, label):
+        res = {}
+        for k, v in self.get_node(label).__dict__.items():
+            res[k[1:]] = v
+        return res
 
     def get_node(self, label):
         return self.graph.node[label]['node']
