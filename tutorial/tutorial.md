@@ -113,6 +113,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Step 2 - Define a pipeline and submit it
 We will now define a pipeline which generates a number, squares it and writes it to a file. This can be considered analogous to a IoT application, where data is read from a sensor, transformed by some function, and then written to a database. Note that all following steps are run in the interactive shell created from the previous step, but they can also written to a file and executed separately. 
 
+![Tutorial Pipeline](static/tut_pipeline.png?raw=true "Tutorial Pipeline")
+
 The first step is to import nomad.
 ```python
 import nomad
@@ -125,9 +127,9 @@ nodes = nomad.get_nodes(conn_str)
 print(nodes)    # Expected result: ['kube-master', 'kube-node-1', 'kube-node-2']
 ```
 
-We will now define the operators that compose the sample pipeline as independent methods. We have a `source` method which generates integers between 0 and 10, a `square` method that squares any input and a `write_to_file` method, that appends the input to a local file.
+We will now define the operators that compose the sample pipeline as independent methods. We have a `random_gen` method which generates integers between 0 and 10, a `square` method that squares any input and a `write_to_file` method, that appends the input to a local file.
 ```python
-def source():
+def random_gen():
     import random
     return random.randint(0,10)
 
@@ -143,7 +145,7 @@ def write_to_file(x):
 
 Next, we need to define a logical ordering of these operators in the pipeline. We do so by specifying them in a python list:
 ```python
-operators = [source, square, write_to_file] # source -> square -> write_to_file
+operators = [random_gen, square, write_to_file] # random_gen -> square -> write_to_file
 ```
 
 Next, the nomad scheduler needs to know the computational and network costs of these operators so it can place them optimally on the infrastructure. This profiling will (soon) be automatic, or you could manually specify the performance profile of the operators.  This is specified as a list of dictionaries, with each dictionary containing two keys, `cloud_execution_time` and `output_msg_size`. `cloud_execution_time` is proxy for the compute requirements of the operator, defined as the time taken in seconds to run the operator on the most powerful machine in the cluster. `output_msg_size` is the size of the value returned by the method in bytes.
