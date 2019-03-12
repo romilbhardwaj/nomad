@@ -90,6 +90,21 @@ class Cluster(object):
                 logger.exception(e)
                 logger.warning('Could not update link between node %s and %s' % (l['from'], l['to']) )
 
+    def get_network_profiling(self):
+        return [self.get_link_profile(l) for l in self.graph.edges(data=True) if l[2] != {}]
+
+
+    def get_link_profile(self, link):
+        """
+        :param link: tuple of the form ('from':string, 'to':string, 'data':dict)
+        :return: dictionary of the form {from:string, to:string, latency:float, bandwidth:float}
+        """
+        link_obj = link[2]['link']
+
+        res = {}
+        for k, v in link_obj.__dict__.items():
+            res[k[1:]] = v
+        return res
 
     def update_nodes(self, nodes_dict):
         for k,v in nodes_dict.items():
@@ -111,7 +126,12 @@ class Cluster(object):
 
     def get_node_profiling(self):
         # TODO: this should be a dict of dicts instead.
-        return [self.get_node_profile(n) for n in self.graph.nodes]
+        res = {}
+        for n in self.graph.nodes:
+            res[n] = self.get_node_profile(n)
+            del res[n]['label']
+
+        return res
 
 
     def get_node_profile(self, label):

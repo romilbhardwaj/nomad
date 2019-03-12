@@ -47,3 +47,46 @@ def submit_pipeline(ops, start, end, pipeline_id, master_ip, profile=None):
         server.receive_pipeline(data_to_send, start, end, pipeline_id)
     else:
         server.receive_pipeline(data_to_send, start, end, pipeline_id, profiling_dict)
+
+def update_pipeline_profiling(pid, pipeline_profile, master_ip):
+    """
+    :param pid:
+    :param pipeline_profile: dictionary of the form {'pid-i': {'cloud_execution_time':float, 'output_msg_size': float} },
+    where i is the i-th operator
+    :param master_ip:
+    :return:
+    """
+    server = xmlrpc.client.ServerProxy(master_ip, allow_none=True)
+    server.update_pipeline_profiling(pid, pipeline_profile)
+
+def update_node_profiling(node_profile, master_ip):
+    '''
+    :param node_profile: dict of the form {'node_id' : {'C':float, 'architecture':string} }
+    :param master_ip:
+    :return:
+    '''
+    server = xmlrpc.client.ServerProxy(master_ip, allow_none=True)
+    server.update_node_profiling(node_profile)
+
+def update_network_profiling(network_profile, master_ip):
+    '''
+    :param network_profile: list of dictionaries [{'from':sting(node_id), 'to':sting(node_id), 'bandwidth':float,
+    'latency':float}, ... ]
+    :param master_ip:
+    :return:
+    '''
+    server = xmlrpc.client.ServerProxy(master_ip, allow_none=True)
+    server.update_network_profiling(network_profile)
+
+def get_node_profiling(master_ip):
+    server = xmlrpc.client.ServerProxy(master_ip, allow_none=True)
+    return server.get_node_profiling()
+
+def get_network_profiling(master_ip):
+    server = xmlrpc.client.ServerProxy(master_ip, allow_none=True)
+    return  server.get_network_profiling()
+
+def get_pipeline_profiling(pid, master_ip):
+    server = xmlrpc.client.ServerProxy(master_ip, allow_none=True)
+    return server.get_pipeline_profiling(pid)
+

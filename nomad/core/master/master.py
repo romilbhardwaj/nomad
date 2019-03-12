@@ -82,7 +82,8 @@ class Master(object):
         # Init RPC Server
         logger.info("Instantiating RPC server on port %d" % self.master_rpc_port)
         methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address, self.update_pipeline_profiling,
-                               self.update_cluster_profiling, self.update_node_profiling, self.update_network_profiling, self.get_node_profiling]
+                               self.update_node_profiling, self.update_network_profiling, self.get_node_profiling, self.get_network_profiling,
+                               self.get_pipeline_profiling]
 
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
@@ -218,18 +219,21 @@ class Master(object):
     def update_pipeline_profiling(self, pid, new_profile):
         self.submit_pipeline_profiling(pid, new_profile)
 
-    def update_cluster_profiling(self, new_network_profile, new_node_profile):
-        self.submit_network_profiling(new_network_profile)
-        self.submit_node_profiling(new_node_profile)
-
     def update_node_profiling(self, new_node_profile):
         self.submit_node_profiling(new_node_profile)
 
     def update_network_profiling(self, new_network_profile):
         self.submit_network_profiling(new_network_profile)
 
+    def get_network_profiling(self):
+        return self.universe.get_network_profiling()
+
     def get_node_profiling(self):
-        return self.universe.get_node_profile()
+        return self.universe.get_node_profiling()
+
+    def get_pipeline_profiling(self, pid):
+        return self.universe.get_pipeline_profiling(pid)
+
 
     def instantiate_pipeline(self, pipeline_id):
         pipeline = self.universe.get_pipeline(pipeline_id)

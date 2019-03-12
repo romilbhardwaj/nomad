@@ -112,6 +112,23 @@ class Universe(object):
                 for key, val in operator_profile.items():
                     setattr(operator, '_'+key, val)
 
+    def get_pipeline_profiling(self, pid):
+        #list of attrs to retrive TODO: allow users to specify
+        attrs = ['cloud_execution_time', 'output_msg_size']
+        res = {}
+        if pid in self.pipelines:
+            pipeline = self.pipelines[pid]
+            for op_id in pipeline.operators:
+                op_profile = {}
+                operator = self.operators[op_id]
+                for k, v in operator.__dict__.items():
+                    #only take attributs specified in attrs
+                    if k[1:] in attrs:
+                        op_profile[k[1:]] = v
+
+                res[op_id] = op_profile
+        return res
+
     def create_cluster(self, node_list_from_kubernetes):
         self.cluster = Cluster.create_cluster(node_list_from_kubernetes)
 
@@ -130,12 +147,6 @@ class Universe(object):
         self.add_operator_instance(op_inst)
         return op_inst
 
-    def update_network_profiling(self, link_profiling_info):
-        '''
-        :param link_profiling_info:
-        :type link_profiling_info: List of link objects [Link()..]
-        '''
-        self.cluster.update_links(link_profiling_info)
 
     def update_node_profiling(self, node_profiling_info):
         '''
@@ -147,6 +158,9 @@ class Universe(object):
 
     def get_node_profiling(self):
         return self.cluster.get_node_profiling()
+
+    def get_network_profiling(self):
+        return self.cluster.get_network_profiling()
 
     def get_node(self, label):
         return self.cluster.get_node(label)
