@@ -113,7 +113,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 ## Step 2 - Define a pipeline and submit it
 We will now define a pipeline which generates a number, squares it and writes it to a file. This can be considered analogous to a IoT application, where data is read from a sensor, transformed by some function, and then written to a database. Note that all following steps are run in the interactive shell created from the previous step, but they can also written to a file and executed separately. 
 
-![Tutorial Pipeline](static/tut_pipeline.png?raw=true "Tutorial Pipeline")
+![Tutorial Pipeline](https://github.com/romilbhardwaj/nomad/raw/master/tutorial/static/tut_pipeline.PNG)
 
 The first step is to import nomad.
 ```python
