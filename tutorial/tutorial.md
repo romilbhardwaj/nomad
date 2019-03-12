@@ -84,12 +84,31 @@ kubectl exec -it $(kubectl get pod -l "app=nomadmaster" -o jsonpath='{.items[0].
 -->
 
 ## Step 1 - Creating a virtual cluster
-Nomad uses Kubernetes to orchestrate and schedule pipelines. In a real deployment, this cluster would span across machines on the edge and the cloud, but for this tutorial we'll be creating a virtual cluster locally on our machines. For this, we will be using [kubeadm-dind-cluster](https://github.com/kubernetes-sigs/kubeadm-dind-cluster), a utility which creates kubernetes nodes as local docker containers. For the purposes of this tutorial, we have simplified the setup process - just run
-```bash
-./tutorial_setup.sh
-```
+Nomad uses Kubernetes to orchestrate and schedule pipelines. In a real deployment, this cluster would span across machines on the edge and the cloud, but for this tutorial we'll be creating a virtual cluster locally on our machines. For this, we will be using [kubeadm-dind-cluster](https://github.com/kubernetes-sigs/kubeadm-dind-cluster), a utility which creates kubernetes nodes as local docker containers. For the purposes of this tutorial, we have simplified the setup process - just run `tutorial_setup.sh`
 
 This will take care of setting up the cluster on your machine and launching Nomad on this virtual cluster. When the script completes, you should find yourself in a python shell.
+
+```bash
+romilb@romilx1:/nomad/tutorial$ ./tutorial_setup.sh
+
+* Making sure DIND image is up to date
+v1.12: Pulling from mirantis/kubeadm-dind-cluster
+Digest: sha256:c9a03b864c8d17791e18db3d3254965746e7dcf9e8611574d1f9b44b59e9ee0c
+Status: Image is up to date for mirantis/kubeadm-dind-cluster:v1.12
+* Starting DIND container: kube-master
+...
+...
+Waiting for Nomad master to start running...
+Waiting for Nomad master to start running..
+Waiting for Nomad master to start running...
+Waiting for Nomad master to start running...
+
+nomadmaster-deployment-57ddcfc956-qlvn9   1/1     Running   0          77s
+Python 3.6.7 | packaged by conda-forge | (default, Feb 20 2019, 02:51:38)
+[GCC 7.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>>
+```
 
 ## Step 2 - Define a pipeline and submit it
 We will now define a pipeline which generates a number, squares it and writes it to a file. This can be considered analogous to a IoT application, where data is read from a sensor, transformed by some function, and then written to a database. Note that all following steps are run in the interactive shell created from the previous step, but they can also written to a file and executed separately. 
@@ -97,6 +116,13 @@ We will now define a pipeline which generates a number, squares it and writes it
 The first step is to import nomad.
 ```python
 import nomad
+```
+
+Let's check if the nomad cluster is correctly setup. Connect to the nomad master and fetch the list of nodes in cluster:
+```python
+conn_str = "http://127.0.0.1:30000"
+nodes = nomad.get_nodes(conn_str)
+print(nodes)    # Expected result: ['kube-master', 'kube-node-1', 'kube-node-2']
 ```
 
 We will now define the operators that compose the sample pipeline as independent methods. We have a `source` method which generates integers between 0 and 10, a `square` method that squares any input and a `write_to_file` method, that appends the input to a local file.
@@ -149,7 +175,6 @@ end_node = "kube-master"
 
 Next, specify a unique name for your pipeline.
 ```python
-#Specify a pipline name here:
 pipeline_id = <Insert name here> # For instance, "mydemo"
 ``` 
 
@@ -158,13 +183,12 @@ The pipeline is now ready for submission. Submit it with the nomad client librar
 # Submit the pipeline to the nomad master.
 # This will make latency and compute aware placement decisions and instantiate the pipeline.
 
-conn_str = "http://127.0.0.1:30000"
 ops = nomad.submit_pipeline(operators, start_node, end_node, pipeline_id, master_conn_str = conn_str, profile=profiling)
 ```
 
 `nomad.submit_pipeline` is a blocking call and might take some time to complete. In this call, the nomad master builds new containers with our operators and then launches them on the cluster. It returns a list of GUIDs for the operators that have been launched. 
 
-Once the above call returns, you can get the result from the square operator by calling `nomad.get_last_output(op_guid, conn_str)`.
+Once the above call returns, you can get the result from the square operator by calling `nomad.get_last_output(op_guid, conn_str)`. If this fails, the operator might still be starting up. Please retry after the operator has started. 
 ```python
 result = nomad.get_last_output(ops[1], master_conn_str = conn_str)
 print(result)
@@ -179,4 +203,6 @@ tail -f /tmp/output.txt
 -->
 
 ## Conclusion
-To cleanup, run `docker\images\master\k8s\tutorial_shutdown.sh`.
+This completes the nomad tutorial. We would appreciate your feedback - please feel free to file issues on GitHub.
+
+To cleanup, run `docker\images\master\k8s\tutorial_shutdown.sh`. WARNING: This will also stop any other docker containers you may be running. 

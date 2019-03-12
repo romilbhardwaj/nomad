@@ -49,6 +49,7 @@ def submit_pipeline(ops, start, end, pipeline_id, master_conn_str, profile=None)
         op_guids = server.receive_pipeline(data_to_send, start, end, pipeline_id)
     else:
         op_guids = server.receive_pipeline(data_to_send, start, end, pipeline_id, profiling_dict)
+    op_guids.reverse()
     return op_guids
 
 
@@ -64,3 +65,15 @@ def get_last_output(op_id, master_conn_str):
     '''
     server = xmlrpc.client.ServerProxy(master_conn_str, allow_none=True)
     return server.get_last_output(op_id)
+
+
+def get_nodes(master_conn_str):
+    '''
+    Gets the list of nodes in the nomad cluster.
+    :param master_conn_str: Connection string to nomad master
+    :type master_conn_str:
+    :return:
+    :rtype:
+    '''
+    server = xmlrpc.client.ServerProxy(master_conn_str, allow_none=True)
+    return server.get_nodes()

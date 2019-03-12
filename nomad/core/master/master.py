@@ -57,6 +57,7 @@ class Master(object):
         self.KubernetesAPI = KubernetesAPI()
 
         # Setting up the universe
+        self.node_list = []
         self.universe_setup()
 
         if master_rpc_port is None:
@@ -81,7 +82,7 @@ class Master(object):
 
         # Init RPC Server
         logger.info("Instantiating RPC server on port %d" % self.master_rpc_port)
-        methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address, self.get_last_output]
+        methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address, self.get_last_output, self.get_nodes]
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread
 
@@ -102,10 +103,10 @@ class Master(object):
         Static profiles the cluster and updates the universe with the cluster and the profiling values.
         '''
         logger.info("Setting up universe.")
-        node_list = self.KubernetesAPI.get_nodes()  # List of str
+        self.node_list = self.KubernetesAPI.get_nodes()  # List of str
        # node_list_test =  ['phone', 'cloud', 'pc', 'base_station'] # List of str
         logger.info("Creating cluster object in universe.")
-        self.universe.create_cluster(node_list)
+        self.universe.create_cluster(self.node_list)
         logger.info("Cluster created, adding profiling info now.")
         node_profiling_info, link_profiling_info = self.profile_cluster(self.universe.cluster) # Dict of {'node_id': {'C': int}}
         self.universe.update_network_profiling(link_profiling_info)
@@ -278,6 +279,8 @@ class Master(object):
     def get_last_output(self, op_id):
         return self.universe.get_operator_instance(op_id).get_last_output()
 
+    def get_nodes(self):
+        return self.node_list
 
 if __name__ == '__main__':
     master = Master()
