@@ -39,6 +39,7 @@ sys.stderr = LoggerWriter(logger.warning)
 
 
 class NomadClient(object):
+    last_output = None
     class OperatorThread(threading.Thread):
         def __init__(self, incoming_queue, outgoing_queue, operator_func, is_first_operator, is_final_operator):
             threading.Thread.__init__(self)
@@ -51,6 +52,7 @@ class NomadClient(object):
             self.is_final_operator = is_final_operator
 
         def work(self):
+            global last_output
             while (True):
                 message_start_timestamp = None
                 if not self.is_first_operator:
@@ -69,6 +71,7 @@ class NomadClient(object):
                 else:
                     op_result = self.operator_func()
                 op_end_time = time.time()
+                last_output = op_result
                 output_message = Message(op_result, start_timestamp=message_start_timestamp)
                 if not self.is_final_operator:
                     self.outgoing_queue.put(output_message)
@@ -174,7 +177,7 @@ class NomadClient(object):
             raise
 
         # Init RPC Server
-        methods_to_register = [self.submit_message, self.ready_check]
+        methods_to_register = [self.submit_message, self.ready_check, self.get_last_output]
         logger.info("Creating client RPC server with the port %d" % self.client_rpc_port)
         self.rpcserver = RPCServerThread(methods_to_register, self.client_rpc_port, multithreaded=True)
         self.rpcserver.start()  # Run RPC server in separate thread
@@ -218,6 +221,10 @@ class NomadClient(object):
     def notify_server_onalive(self):
         logger.info("Notifying server onalive.")
         self.master_rpc_proxy.register_client_onalive(self.guid)
+
+    def get_last_output(self):
+        # TODO(romilb): We should probably serialize last_output since xmlrpc wont work well with nested datatypes.
+        return last_output
 
     def submit_message(self, message_dict):
         logger.info("Recieved message.")
