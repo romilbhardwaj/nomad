@@ -192,8 +192,11 @@ ops = nomad.submit_pipeline(operators, start_node, end_node, pipeline_id, master
 
 Once the above call returns, you can get the result from the square operator by calling `nomad.get_last_output(op_guid, conn_str)`. If this fails, the operator might still be starting up. Please retry after the operator has started. 
 ```python
-result = nomad.get_last_output(ops[1], master_conn_str = conn_str)
-print(result)
+import time
+while True:
+    result = nomad.get_last_output(ops[1], master_conn_str = conn_str)
+    print(result)
+    time.sleep(2)
 ```
 
 <!--
