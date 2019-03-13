@@ -1,4 +1,7 @@
+import xmlrpc
+
 from nomad.core.config import ClientConfig
+from nomad.core.utils.helpers import construct_xmlrpc_addr
 
 
 class Operator:
@@ -75,3 +78,17 @@ class OperatorInstance(object):
 
     def get_envs(self):
         return self.envs
+
+    def get_last_output(self):
+        '''
+        Gets the last output from the operator instance. Must be instantiated. Returns none if no output has been produced yet.
+        '''
+        if self.client_ip is None:
+            # TODO(romilb): Return None instead of exception?
+            raise Exception("Operator is not instantiated yet.")
+        instance_rpc = xmlrpc.client.ServerProxy(construct_xmlrpc_addr(self.client_ip, ClientConfig.RPC_DEFAULT_PORT), allow_none=True)
+        try:
+            result = instance_rpc.get_last_output()
+        except:
+            result = None
+        return result

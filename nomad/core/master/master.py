@@ -57,6 +57,7 @@ class Master(object):
         self.KubernetesAPI = KubernetesAPI()
 
         # Setting up the universe
+        self.node_list = []
         self.universe_setup()
 
         if master_rpc_port is None:
@@ -105,10 +106,10 @@ class Master(object):
         Static profiles the cluster and updates the universe with the cluster and the profiling values.
         '''
         logger.info("Setting up universe.")
-        node_list = self.KubernetesAPI.get_nodes()  # List of str
+        self.node_list = self.KubernetesAPI.get_nodes()  # List of str
        # node_list_test =  ['phone', 'cloud', 'pc', 'base_station'] # List of str
         logger.info("Creating cluster object in universe.")
-        self.universe.create_cluster(node_list)
+        self.universe.create_cluster(self.node_list)
         logger.info("Cluster created, adding profiling info now.")
         node_profiling_info, link_profiling_info = self.profile_cluster(self.universe.cluster) # Dict of {'node_id': {'C': int}}
         self.universe.update_network_profiling(link_profiling_info)
@@ -184,9 +185,9 @@ class Master(object):
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
         logger.info("Pipeline %s schedule computed! Now instantiating.." % str(pipeline_id))
-        status = self.instantiate_pipeline(pipeline_id)
+        operator_instances = self.instantiate_pipeline(pipeline_id)
         logger.info("Pipeline %s instantiated!" % str(pipeline_id))
-        return pipeline_id if status != -1 else -1
+        return operator_instances
 
     def schedule(self, pipeline_guid):
         logger.info("Trying to schedule pipeline %s" % str(pipeline_guid))
@@ -247,6 +248,7 @@ class Master(object):
             image = self.universe.get_operator(operator_instance.operator_guid)._fn_image
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
+        return operator_instances
 
 
     def receive_pipeline(self, ops, start, end, pid, profile=None):
@@ -268,7 +270,7 @@ class Master(object):
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
             tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
-                                                          buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True)
+                                                          buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
             for line in build_log:
                 logger.debug(line)
@@ -296,7 +298,14 @@ class Master(object):
 
         logger.info("---Building %d images took %s seconds. ---" % (len(images), time.time() - start_time))
 
-        self.submit_pipeline(images, start, end, pid, profile)
+        op_instances = self.submit_pipeline(images, start, end, pid, profile)
+        return [op.guid for op in op_instances]
+
+    def get_last_output(self, op_id):
+        return self.universe.get_operator_instance(op_id).get_last_output()
+
+    def get_nodes(self):
+        return self.node_list
 
 if __name__ == '__main__':
     master = Master()
