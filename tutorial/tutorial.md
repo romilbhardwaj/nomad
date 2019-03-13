@@ -194,8 +194,9 @@ Once the above call returns, you can get the result from the square operator by 
 ```python
 import time
 while True:
-    result = nomad.get_last_output(ops[1], master_conn_str = conn_str)
-    print(result)
+    result0 = nomad.get_last_output(ops[0], master_conn_str = conn_str)
+    result1 = nomad.get_last_output(ops[1], master_conn_str = conn_str)
+    print("{} -> {}".format(result0, result1))
     time.sleep(2)
 ```
 
