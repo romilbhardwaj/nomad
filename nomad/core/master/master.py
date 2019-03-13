@@ -84,7 +84,7 @@ class Master(object):
         logger.info("Instantiating RPC server on port %d" % self.master_rpc_port)
         methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address, self.update_pipeline_profiling,
                                self.update_node_profiling, self.update_network_profiling, self.get_node_profiling, self.get_network_profiling,
-                               self.get_pipeline_profiling]
+                               self.get_pipeline_profiling, self.get_nodes, self.get_last_output]
 
         self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
         self.rpcserver.start()  # Run RPC server in separate thread

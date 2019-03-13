@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+set -e
 # Install md5sha1sum on OSX
 if [[ "$OSTYPE" == "darwin"* ]]; then
     brew install md5sha1sum
