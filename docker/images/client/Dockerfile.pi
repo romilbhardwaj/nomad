@@ -1,5 +1,4 @@
 FROM resin/rpi-raspbian:jessie
-
 # Update apt and install wget
 RUN  apt-get update \
   && apt-get install -y wget libopenmpi-dev wget nano bzip2 gcc libffi-dev
