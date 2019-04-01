@@ -1,7 +1,10 @@
-FROM resin/rpi-raspbian:jessie
+FROM balenalib/raspberrypi3:jessie
 # Update apt and install wget
+
 RUN  apt-get update \
   && apt-get install -y wget libopenmpi-dev wget nano bzip2 gcc libffi-dev
+
+RUN ls -l /proc/sys/fs/binfmt_misc
 
 #Install conda
 RUN  wget --quiet https://github.com/jjhelmus/berryconda/releases/download/v2.0.0/Berryconda3-2.0.0-Linux-armv7l.sh -O ~/berryconda.sh && \
@@ -25,6 +28,8 @@ RUN conda env create --force -f /nomad/environment_rpi.yml
 # Change conda env
 ENV PATH /root/berryconda3/envs/nomad/bin:$PATH
 
+#Fix to make picamera install work: https://github.com/balena-io-projects/balena-rpi-python-picamera/issues/8
+ENV READTHEDOCS True
 
 #install picamera
 RUN pip install picamera
