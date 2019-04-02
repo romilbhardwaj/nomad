@@ -1,4 +1,6 @@
 import os
+from os.path import expanduser
+import platform
 import logging
 import threading
 from multiprocessing import Process
@@ -26,8 +28,14 @@ logger = logging.getLogger()
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] [%(name)-4s] %(message)s")
 
 # Setup logging to file
-os.makedirs(MasterConfig.DEFAULT_LOG_DIR, mode=0o755, exist_ok=True)
-fileHandler = logging.FileHandler("{0}/{1}".format(MasterConfig.DEFAULT_LOG_DIR, MasterConfig.MASTER_LOG_FILE_NAME))
+if platform.system() == 'Darwin':
+    #OS X
+    os.makedirs(expanduser("~") + '/nomad/logs', mode=0o755, exist_ok=True)
+    fileHandler = logging.FileHandler("{0}/{1}".format(expanduser("~") + '/nomad/logs', MasterConfig.MASTER_LOG_FILE_NAME))
+else:
+    os.makedirs(MasterConfig.DEFAULT_LOG_DIR, mode=0o755, exist_ok=True)
+    fileHandler = logging.FileHandler("{0}/{1}".format(MasterConfig.DEFAULT_LOG_DIR, MasterConfig.MASTER_LOG_FILE_NAME))
+
 fileHandler.setFormatter(logFormatter)
 logger.addHandler(fileHandler)
 
