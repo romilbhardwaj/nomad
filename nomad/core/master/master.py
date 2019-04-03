@@ -265,18 +265,18 @@ class Master(object):
             with open(path, 'wb') as f:
                 f.write(binary_obj.data)
 
-        def build_op_image(opid, pid, pickle):
-            build_src_path = '/tmp/op_%d/' % opid
+        def build_op_image(opid, pid, arch, pickle):
+            build_src_path = '/tmp/%s/op_%d' % (arch, opid)
             if not os.path.exists(build_src_path):
                 os.mkdir(build_src_path)
-            shutil.copy('/nomad/images/client/Dockerfile.operator', build_src_path + 'Dockerfile')
+            shutil.copy('/nomad/images/client/Dockerfile.operator.%s' % arch, build_src_path + 'Dockerfile')
             file_name = build_src_path + 'operator.pickle'
 
             # Save pickle
             write_to_file(pickle, file_name)
 
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
-            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
+            tag = "lab11nomad/operators:%s_op_%d_%s" % (pid, opid, arch)
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
@@ -293,10 +293,11 @@ class Master(object):
         for i, op_pickle in enumerate(ops):
             # TODO: Build multiple arch images
             # TODO: Should we use a process pool instead of spawning a new process for each image?
-            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
-            images.append(tag)
-            p = Process(target=build_op_image, args=(i, pid, op_pickle))
-            processes.append(p)
+            for arch in MasterConfig.DEFAULT_ARCHITECTURES:
+                tag = "lab11nomad/operators:%s_op_%d_%s" % (pid, i, arch)
+                images.append(tag)
+                p = Process(target=build_op_image, args=(i, pid, arch, op_pickle))
+                processes.append(p)
 
         for p in processes:
             p.start()
