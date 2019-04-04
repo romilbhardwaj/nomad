@@ -1,4 +1,4 @@
-FROM lab11nomad/client-pi:latest
+FROM lab11nomad/client:rpiarm
 ARG PYTHON_PICKLE_PATH
 RUN echo $PYTHON_PICKLE_PATH
 ADD $PYTHON_PICKLE_PATH /nomad/operator.pickle

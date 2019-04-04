@@ -4,8 +4,6 @@ FROM balenalib/raspberrypi3:jessie
 RUN  apt-get update \
   && apt-get install -y wget libopenmpi-dev wget nano bzip2 gcc libffi-dev
 
-RUN ls -l /proc/sys/fs/binfmt_misc
-
 #Install conda
 RUN  wget --quiet https://github.com/jjhelmus/berryconda/releases/download/v2.0.0/Berryconda3-2.0.0-Linux-armv7l.sh -O ~/berryconda.sh && \
     chmod +x ~/berryconda.sh && \
