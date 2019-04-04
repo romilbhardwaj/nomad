@@ -14,7 +14,7 @@ from nomad.core.master.kubernetes_api import KubernetesAPI
 from nomad.core.placement.minlatsolver import RecMinLatencySolver
 from nomad.core.scheduler.KubernetesScheduler import KubernetesScheduler
 from nomad.core.universe.universe import Universe
-
+from nomad.core.graph.node import Architectures
 from nomad.core.utils.LoggerWriter import LoggerWriter
 from nomad.core.utils.RPCServerThreads import RPCServerThread
 import nomad.core.config.MasterConfig as MasterConfig
@@ -276,7 +276,7 @@ class Master(object):
             write_to_file(pickle, file_name)
 
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
-            tag = "lab11nomad/operators:%s_op_%d_%s" % (pid, opid, arch)
+            tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, opid, arch)
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
@@ -293,8 +293,8 @@ class Master(object):
         for i, op_pickle in enumerate(ops):
             # TODO: Build multiple arch images
             # TODO: Should we use a process pool instead of spawning a new process for each image?
-            for arch in MasterConfig.DEFAULT_ARCHITECTURES:
-                tag = "lab11nomad/operators:%s_op_%d_%s" % (pid, i, arch)
+            for arch in Architectures.SUPPORTED:
+                tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, i, arch)
                 images.append(tag)
                 p = Process(target=build_op_image, args=(i, pid, arch, op_pickle))
                 processes.append(p)
