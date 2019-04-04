@@ -266,7 +266,7 @@ class Master(object):
                 f.write(binary_obj.data)
 
         def build_op_image(opid, pid, arch, pickle):
-            build_src_path = '/tmp/%s/op_%d' % (arch, opid)
+            build_src_path = '/tmp/%s/op_%d/' % (arch, opid)
             if not os.path.exists(build_src_path):
                 os.makedirs(build_src_path)
             shutil.copy('/nomad/images/client/Dockerfile.operator.%s' % arch, build_src_path + 'Dockerfile')
