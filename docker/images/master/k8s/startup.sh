@@ -6,7 +6,7 @@ kubectl create -f service_nomadmaster.yaml
 while getopts ":t" opt; do
   case $opt in
     t)
-      echo "Using nomad master:tests image" >&2
+      echo "Using nomad master:test image" >&2
       clusterConfig="deployment_nomadmaster_test.yaml"
       echo $clusterConfig
       ;;
