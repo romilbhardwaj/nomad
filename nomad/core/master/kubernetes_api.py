@@ -37,18 +37,17 @@ class KubernetesAPI(object):
 
 
     def create_kube_service_and_job(self, op_inst, ports=[["nomadmaster", 31000, 31000], ["nomadclient", 30000, 30000],
-                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, image=None, architecture=Architectures.x86):
+                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, images=None, architecture=Architectures.x86):
         k8s_service = self.launch_kube_service(op_inst, ports, namespace)
 
         # TODO: Use multiple arch images.
-        '''
         if architecture == Architectures.x86:
-            image = ClientDockerImages.x86
+            image = images[Architectures.x86]
         elif architecture == Architectures.rpiarm:
-            image = ClientDockerImages.rpiarm
+            image = images[Architectures.rpiarm]
         else:
             raise Exception("Unknown architecture %s" % str(architecture))
-        '''
+
         k8s_job = self.launch_kube_job(op_inst, image, namespace=namespace)
         return k8s_service, k8s_job
 

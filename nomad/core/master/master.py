@@ -255,8 +255,8 @@ class Master(object):
         for operator_instance in operator_instances:
             node = self.universe.get_node(operator_instance.node_id)
             #TODO: select image based on node arch
-            image = self.universe.get_operator(operator_instance.operator_guid)._fn_image
-            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image, architecture=node._architecture)
+            images = self.universe.get_operator(operator_instance.operator_guid)._fn_images
+            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, images=images, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
         return operator_instances
 
