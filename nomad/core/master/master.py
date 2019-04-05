@@ -8,6 +8,7 @@ import time
 import sys
 import json
 import docker
+from collections import defaultdict
 import shutil
 from nomad.core.config import CONSTANTS, ClientConfig, DockerConfig
 from nomad.core.master.kubernetes_api import KubernetesAPI
@@ -253,6 +254,7 @@ class Master(object):
         operator_instances.reverse()
         for operator_instance in operator_instances:
             node = self.universe.get_node(operator_instance.node_id)
+            #TODO: select image based on node arch
             image = self.universe.get_operator(operator_instance.operator_guid)._fn_image
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
@@ -287,15 +289,16 @@ class Master(object):
                                                                           'password': DockerConfig.PASSWORD})
         #create client
         client = docker.from_env()
-        images = []
+        images = defaultdict(dict)
         processes = []
         start_time = time.time()
         for i, op_pickle in enumerate(ops):
-            # TODO: Build multiple arch images
             # TODO: Should we use a process pool instead of spawning a new process for each image?
             for arch in Architectures.SUPPORTED:
                 tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, i, arch)
-                images.append(tag)
+                #Note: we are storing the image tag before we know that the build succeeded.
+                #If the image build fails, k8s will fail to launch the corresponding container.
+                images[i][arch] = tag
                 p = Process(target=build_op_image, args=(i, pid, arch, op_pickle))
                 processes.append(p)
 
