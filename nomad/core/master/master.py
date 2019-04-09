@@ -279,6 +279,8 @@ class Master(object):
 
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
             tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, opid, arch)
+            #TODO: figure out how to specify arch in build process. currently arch is assigned based on ther arch of
+            # the host running the docker daemon
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
