@@ -189,7 +189,7 @@ class Master(object):
         pipeline_id = self.universe.add_pipeline(images, start, end, pipeline_id)
         logger.info("Pipeline %s added to universe, now profiling." % str(pipeline_id))
         pipeline_profiling_info = (profile if profile
-                                   else self.profile_pipeline(self.universe.get_pipeline(pipeline_id)))
+                                   else self.profile_pipeline(pipeline_id))
         self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
@@ -216,15 +216,28 @@ class Master(object):
             logger.info("Setting env for operator_instance %s" % op_inst.guid)
             op_inst.set_envs(construct_xmlrpc_addr(self.ip_address, self.master_rpc_port))
 
-    def profile_pipeline(self, pipeline):
-        #create_pipeline_profiling_containers()
-        #wait_for_pipeline_profiling_completion()
-
+    def profile_pipeline(self, pid):
+        self.create_pipeline_profiling_containers(pid)
+        self.wait_for_pipeline_profiling_completion(pid)
+        #tear_down_pipeline()
+        #return get_pipeline_pipeline_profiling
         #read from file
         profiling_info_file = open('/nomad/nomad/tests/core/master/pipeline_test.json')
         profiling_info = json.load(profiling_info_file)
         profiling_info_file.close()
         return profiling_info
+
+    def create_pipeline_profiling_containers(self, pid):
+        """
+        Instantiates pipeline for profiling.
+        Schedule: [start, profiling_node, ... , profiling_node, end]
+        :param pipeline:
+        :return:
+        """
+        pipeline = self.universe.get_pipeline(pid)
+
+        schedule = [pipeline.start_node]
+        for
 
     def update_pipeline_profiling(self, pid, new_profile):
         self.submit_pipeline_profiling(pid, new_profile)
@@ -257,6 +270,7 @@ class Master(object):
             #TODO: select image based on node arch
             images = self.universe.get_operator(operator_instance.operator_guid)._fn_images
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, images=images, architecture=node._architecture)
+            #TODO: update image running in operator instance.
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
         return operator_instances
 
