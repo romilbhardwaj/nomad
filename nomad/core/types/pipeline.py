@@ -1,5 +1,5 @@
 class Pipeline(object):
-    def __init__(self, guid, operators, start_node, end_node):
+    def __init__(self, guid, operators, start_node, end_node, schedule=None):
         '''
 
         :param operators:
@@ -15,6 +15,7 @@ class Pipeline(object):
         self.start_node = start_node
         self.end_node = end_node
         #TODO: add schedule attr
+        self.schedule = schedule
 
 
     # def set_operator_instances(self, op_instances):
