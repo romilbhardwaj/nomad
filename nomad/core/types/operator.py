@@ -62,16 +62,16 @@ class OperatorInstance(object):
         self.is_final = is_final
         self.envs = None
         self.image = image #Docker image tag
-        #TODO: add state property
-        """
-        In instantite pipeline. Check state property. IF running throw exception. 
-        """
+        self.state = None
 
     def update_ip(self, client_ip):
         self.client_ip = client_ip
 
     def update_image(self, image_tag):
         self.image = image_tag
+
+    def update_state(self, state):
+        self.state = state
 
     def set_envs(self, master_rpc_address, client_rpc_port = ClientConfig.RPC_DEFAULT_PORT, debug=False):
         self.envs = {
