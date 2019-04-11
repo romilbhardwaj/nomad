@@ -208,8 +208,9 @@ class Master(object):
         logger.info("Finding optimal placement for pipeline %s" % str(pipeline_guid))
         latency, placement, distribution = self.scheduler.find_optimal_placement(start, end, operators)
         logger.info("Scheduling result - latency %s, placement %s, distribution %s." % (str(latency), str(placement), str(distribution)))
-
+        #TODO: write schedule to pipeline object.
         # Create OperatorInstances
+        #TODO: move this to instantiate pipeline
         logger.info("Now trying to create the operator instances.")
         for i in range(0, len(oid_list)):
             op_inst = self.universe.create_and_append_operator_instance(pipeline_guid, oid_list[i], node_id=placement[i])
@@ -220,6 +221,7 @@ class Master(object):
         #self.create_pipeline_profiling_containers(pid)
         #self.wait_for_pipeline_profiling_completion(pid)
         #tear_down_pipeline()
+        #Todo write pipeline profile to long term storage.
         #return get_pipeline_pipeline_profiling
         #read from file
         profiling_info_file = open('/nomad/nomad/tests/core/master/pipeline_test.json')
@@ -260,7 +262,10 @@ class Master(object):
 
     def instantiate_pipeline(self, pipeline_id):
         pipeline = self.universe.get_pipeline(pipeline_id)
+        #Check if op instances exist.
+        #Check if pipeline has schedule attr.
         operator_instance_guids = [self.universe.get_operator(op_guid)._op_instances[0] for op_guid in pipeline.operators]
+
         operator_instances = [self.universe.get_operator_instance(guid) for guid in operator_instance_guids]
 
         #Instantiate in reverse order
@@ -296,7 +301,7 @@ class Master(object):
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
             tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, opid, arch)
             #TODO: figure out how to specify arch in build process. currently arch is assigned based on ther arch of
-            # the host running the docker daemon
+            # the host running the docker daemon. Set platform-arg.
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))

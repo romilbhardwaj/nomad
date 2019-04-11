@@ -62,6 +62,10 @@ class OperatorInstance(object):
         self.is_final = is_final
         self.envs = None
         self.image = image #Docker image tag
+        #TODO: add state property
+        """
+        In instantite pipeline. Check state property. IF running throw exception. 
+        """
 
     def update_ip(self, client_ip):
         self.client_ip = client_ip

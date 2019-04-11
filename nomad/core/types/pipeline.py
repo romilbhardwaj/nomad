@@ -14,6 +14,7 @@ class Pipeline(object):
         # self.operator_instances = []    #TODO: Can we remove this since this is maintained by the operator? populated by master (type: OperatorInstance)
         self.start_node = start_node
         self.end_node = end_node
+        #TODO: add schedule attr
 
 
     # def set_operator_instances(self, op_instances):
