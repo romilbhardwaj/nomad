@@ -291,7 +291,7 @@ class Master(object):
             k8s_service, k8s_job, image = self.KubernetesAPI.create_kube_service_and_job(operator_instance, images=images, architecture=node._architecture)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
             operator_instance.update_image(image)
-            operator_instances.update_state('running')
+            operator_instance.update_state('running')
 
         return operator_instances
 
