@@ -210,13 +210,7 @@ class Master(object):
         latency, placement, distribution = self.scheduler.find_optimal_placement(start, end, operators)
         logger.info("Scheduling result - latency %s, placement %s, distribution %s." % (str(latency), str(placement), str(distribution)))
         #TODO: write schedule to pipeline object.
-        # Create OperatorInstances
-        #TODO: move this to instantiate pipeline
-        logger.info("Now trying to create the operator instances.")
-        for i in range(0, len(oid_list)):
-            op_inst = self.universe.create_and_append_operator_instance(pipeline_guid, oid_list[i], node_id=placement[i])
-            logger.info("Setting env for operator_instance %s" % op_inst.guid)
-            op_inst.set_envs(construct_xmlrpc_addr(self.ip_address, self.master_rpc_port))
+        pipeline.schedule = {'latency': latency, 'placement': placement, 'distribution': distribution}
 
     def profile_pipeline(self, pid):
         #self.create_pipeline_profiling_containers(pid)
@@ -263,11 +257,30 @@ class Master(object):
 
     def instantiate_pipeline(self, pipeline_id):
         pipeline = self.universe.get_pipeline(pipeline_id)
-        #Check if op instances exist.
-        #Check if pipeline has schedule attr.
-        operator_instance_guids = [self.universe.get_operator(op_guid)._op_instances[0] for op_guid in pipeline.operators]
+        #Here we are assuming that the opids are stored in order
+        #Is that a too strong assumption?
+        oid_list = [oid for oid in pipeline.operators]
 
+        #Check if pipeline has schedule attr.
+        if pipeline.schedule == None:
+            logger.exception("Pipeline %d has no valid schedule" % pipeline_id)
+            raise Exception("No schedule found for pipeline %d" % pipeline_id)
+
+        #Create operator instances.
+        logger.info("Now trying to create the operator instances.")
+        for i in range(len(oid_list)):
+            op_inst = self.universe.create_and_append_operator_instance(pipeline_id, oid_list[i],
+                                                                        node_id=pipeline.schedule['placement'][i])
+            logger.info("Setting env for operator_instance %s" % op_inst.guid)
+            op_inst.set_envs(construct_xmlrpc_addr(self.ip_address, self.master_rpc_port))
+
+        operator_instance_guids = [self.universe.get_operator(op_guid)._op_instances[0] for op_guid in pipeline.operators]
         operator_instances = [self.universe.get_operator_instance(guid) for guid in operator_instance_guids]
+
+        # Check if pipeline is already instantiated.
+        if any([opinst.state == 'running' for opinst in operator_instances]):
+            logger.exception("Operator instances already running")
+            raise Exception("Pipeline already instantiated")
 
         #Instantiate in reverse order
         operator_instances.reverse()
@@ -332,7 +345,8 @@ class Master(object):
         for p in processes:
             p.join()
 
-        logger.info("---Building %d images took %s seconds. ---" % (len(images), time.time() - start_time))
+        logger.info("---Building %d images took %s seconds. ---" % (len(images) * len(Architectures.SUPPORTED),
+                                                                    time.time() - start_time))
 
         op_instances = self.submit_pipeline(images, start, end, pid, profile)
         return [op.guid for op in op_instances]
