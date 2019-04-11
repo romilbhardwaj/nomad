@@ -188,9 +188,10 @@ class Master(object):
         logger.info("Submit_pipeline is called with params fns=%s, start=%s, end=%s, pipeline_id=%s." % (str(images), str(start), str(end), str(pipeline_id)))
         pipeline_id = self.universe.add_pipeline(images, start, end, pipeline_id)
         logger.info("Pipeline %s added to universe, now profiling." % str(pipeline_id))
-        pipeline_profiling_info = (profile if profile
-                                   else self.profile_pipeline(pipeline_id))
-        self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
+        if profile:
+            self.submit_pipeline_profiling(pipeline_id, profile)
+        else:
+            self.profile_pipeline(pipeline_id)
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
         logger.info("Pipeline %s schedule computed! Now instantiating.." % str(pipeline_id))
@@ -227,7 +228,7 @@ class Master(object):
         profiling_info_file = open('/nomad/nomad/tests/core/master/pipeline_test.json')
         profiling_info = json.load(profiling_info_file)
         profiling_info_file.close()
-        return profiling_info
+        self.submit_pipeline_profiling(pid, profiling_info)
 
     def create_pipeline_profiling_containers(self, pid):
         """
