@@ -217,8 +217,8 @@ class Master(object):
             op_inst.set_envs(construct_xmlrpc_addr(self.ip_address, self.master_rpc_port))
 
     def profile_pipeline(self, pid):
-        self.create_pipeline_profiling_containers(pid)
-        self.wait_for_pipeline_profiling_completion(pid)
+        #self.create_pipeline_profiling_containers(pid)
+        #self.wait_for_pipeline_profiling_completion(pid)
         #tear_down_pipeline()
         #return get_pipeline_pipeline_profiling
         #read from file
@@ -234,10 +234,10 @@ class Master(object):
         :param pipeline:
         :return:
         """
-        pipeline = self.universe.get_pipeline(pid)
+        #pipeline = self.universe.get_pipeline(pid)
 
-        schedule = [pipeline.start_node]
-        for
+        #schedule = [pipeline.start_node]
+        pass
 
     def update_pipeline_profiling(self, pid, new_profile):
         self.submit_pipeline_profiling(pid, new_profile)
@@ -269,9 +269,11 @@ class Master(object):
             node = self.universe.get_node(operator_instance.node_id)
             #TODO: select image based on node arch
             images = self.universe.get_operator(operator_instance.operator_guid)._fn_images
-            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, images=images, architecture=node._architecture)
+            k8s_service, k8s_job, image = self.KubernetesAPI.create_kube_service_and_job(operator_instance, images=images, architecture=node._architecture)
             #TODO: update image running in operator instance.
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
+            operator_instance.update_image(image)
+
         return operator_instances
 
 

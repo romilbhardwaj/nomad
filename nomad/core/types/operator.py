@@ -35,7 +35,7 @@ class Operator:
         self._output_msg_size = s
 
 class OperatorInstance(object):
-    def __init__(self, guid, pipeline_guid, operator_guid, node_id=None, client_ip=None, operator_path=None, is_first=False, is_final=False):
+    def __init__(self, guid, pipeline_guid, operator_guid, node_id=None, client_ip=None, operator_path=None, is_first=False, is_final=False, image=None):
         '''
         Defines an operator instance running on the network. Associated with an operator and a pipeline.
         :param guid: GUID, typically of the form <pipeline_guid>-<operator_guid>-<instance_guid>
@@ -61,9 +61,13 @@ class OperatorInstance(object):
         self.is_first = is_first
         self.is_final = is_final
         self.envs = None
+        self.image = image #Docker image tag
 
     def update_ip(self, client_ip):
         self.client_ip = client_ip
+
+    def update_image(self, image_tag):
+        self.image = image_tag
 
     def set_envs(self, master_rpc_address, client_rpc_port = ClientConfig.RPC_DEFAULT_PORT, debug=False):
         self.envs = {
