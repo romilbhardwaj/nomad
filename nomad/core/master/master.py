@@ -290,7 +290,7 @@ class Master(object):
             architecture = node._architecture
             #Select the correct image
             image = self.universe.get_operator(operator_instance.operator_guid).get_image(architecture)
-            k8s_service, k8s_job, image = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image)
+            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image)
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
             operator_instance.update_image(image)
             operator_instance.update_state('running')
