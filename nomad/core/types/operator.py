@@ -34,6 +34,13 @@ class Operator:
     def set_output_msg_size(self, s):
         self._output_msg_size = s
 
+    def get_image(self, arch):
+        try:
+            return self._fn_images[arch]
+
+        except KeyError:
+            raise Exception("Unknown architecture %s" % str(arch))
+
 class OperatorInstance(object):
     def __init__(self, guid, pipeline_guid, operator_guid, node_id=None, client_ip=None, operator_path=None, is_first=False, is_final=False, image=None):
         '''
