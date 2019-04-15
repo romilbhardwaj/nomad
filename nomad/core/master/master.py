@@ -177,6 +177,7 @@ class Master(object):
         self.universe.update_network_profiling(network_profiling_info)
 
     def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
+        #TODO: check format of pipeline_profiling_info.
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
     def submit_node_profiling(self, node_profile):
@@ -215,7 +216,7 @@ class Master(object):
     def profile_pipeline(self, pid):
         #self.create_pipeline_profiling_containers(pid)
         #self.wait_for_pipeline_profiling_completion(pid)
-        #tear_down_pipeline()
+        #shutdown_pipeline(pid)
         #Todo write pipeline profile to long term storage.
         #return get_pipeline_pipeline_profiling
         #read from file
@@ -233,7 +234,10 @@ class Master(object):
         """
         #pipeline = self.universe.get_pipeline(pid)
 
-        #schedule = [pipeline.start_node]
+        #placement = [pipeline.start_node] + [profiling_node] * len(pipeline) - 2  + [pipeline.end_node]
+        #pipeline.schedule = {'latency':0, 'placement': placement, 'distribution': {}}
+        #self.instantiate_pipeline(pid)
+
         pass
 
     def update_pipeline_profiling(self, pid, new_profile):
@@ -317,7 +321,7 @@ class Master(object):
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
             tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, opid, arch)
             #TODO: figure out how to specify arch in build process. currently arch is assigned based on ther arch of
-            # the host running the docker daemon. Set platform-arg.
+            # the host running the docker daemon. Solution: Set platform-arg.
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
@@ -351,6 +355,7 @@ class Master(object):
                                                                     time.time() - start_time))
 
         op_instances = self.submit_pipeline(images, start, end, pid, profile)
+        #TODO: we should return the pipeline id here.
         return [op.guid for op in op_instances]
 
     def get_last_output(self, op_id):
