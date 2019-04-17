@@ -213,17 +213,20 @@ class Master(object):
         #TODO: write schedule to pipeline object.
         pipeline.schedule = {'latency': latency, 'placement': placement, 'distribution': distribution}
 
-    def profile_pipeline(self, pid):
-        #self.create_pipeline_profiling_containers(pid)
-        #self.wait_for_pipeline_profiling_completion(pid)
-        #shutdown_pipeline(pid)
-        #Todo write pipeline profile to long term storage.
-        #return get_pipeline_pipeline_profiling
+    def profile_pipeline(self, pid, from_file=False):
+        if not from_file:
+            self.create_pipeline_profiling_containers(pid)
+            self.wait_for_pipeline_profiling_completion(pid)
+            logger.info('* Pipeline profiling completed! *')
+            #shutdown_pipeline(pid)
+            #Todo write pipeline profile to long term storage.
+            #return get_pipeline_pipeline_profiling
+        else:
         #read from file
-        profiling_info_file = open('/nomad/nomad/tests/core/master/pipeline_test.json')
-        profiling_info = json.load(profiling_info_file)
-        profiling_info_file.close()
-        self.submit_pipeline_profiling(pid, profiling_info)
+            profiling_info_file = open('/nomad/nomad/tests/core/master/pipeline_test.json')
+            profiling_info = json.load(profiling_info_file)
+            profiling_info_file.close()
+            self.submit_pipeline_profiling(pid, profiling_info)
 
     def create_pipeline_profiling_containers(self, pid):
         """
@@ -232,12 +235,51 @@ class Master(object):
         :param pipeline:
         :return:
         """
-        #pipeline = self.universe.get_pipeline(pid)
+        pipeline = self.universe.get_pipeline(pid)
+        N = len(pipeline.operators)
+        placement = [pipeline.start_node] + [MasterConfig.DEFAUL_PROFILING_NODE] * (N - 2)  + [pipeline.end_node]
+        logger.info("Now launching profiling containers with the following schedule %s" % str(placement))
+        distribution = {pipeline.start_node: 1,
+                        pipeline.end_node: 1,
+                        MasterConfig.DEFAUL_PROFILING_NODE: N-2}
 
-        #placement = [pipeline.start_node] + [profiling_node] * len(pipeline) - 2  + [pipeline.end_node]
-        #pipeline.schedule = {'latency':0, 'placement': placement, 'distribution': {}}
-        #self.instantiate_pipeline(pid)
+        pipeline.schedule = {'latency': 0, 'placement': placement, 'distribution': distribution}
+        self.instantiate_pipeline(pid)
 
+    def wait_for_pipeline_profiling_completion(self, pid):
+        max_time_seconds = 300
+        start = time.time()
+        logger.info("Waiting for profiling completion (PID: %d)..." % pid)
+
+        """
+        Alternative way of implementing this would be add a state attr to the pipeline obj
+        to signal completion of the profiling run and to determine what legal next states to perform.
+        
+        e.g: pipeline states: not_read_for_deployment, profiling, ready_for_deployment, deployed  
+        """
+
+        while(not self.pipeline_ready_for_deployment(pid)):
+            time.sleep(2)
+
+    def pipeline_ready_for_deployment(self, pid):
+        """
+        :param pid:
+        :return: bool. Returns true if pipeline is ready for deployment false otherwise
+        """
+        measurements = {"cloud_execution_time", "output_msg_size"}
+        pipeline = self.universe.get_pipeline(pid)
+        operator_guids = self.universe.get_pipeline(pid).operators
+        profiling = self.get_pipeline_profiling(pid)
+        logger.info("Current pipeline profiling for pipeline %d: %s" % (pid, str(profiling)))
+
+        #Check that all the operators have the desired measurements and that the pipeline has a valid schedule
+        return (all(measurements.issubset(profiling[opid].keys()) for opid in operator_guids)
+                and pipeline.schedule != None)
+
+    def shutdown_pipeline(self, pid):
+        #get opinstances.
+        #remove kube service and job
+        #remove opinstances
         pass
 
     def update_pipeline_profiling(self, pid, new_profile):
@@ -257,7 +299,6 @@ class Master(object):
 
     def get_pipeline_profiling(self, pid):
         return self.universe.get_pipeline_profiling(pid)
-
 
     def instantiate_pipeline(self, pipeline_id):
         pipeline = self.universe.get_pipeline(pipeline_id)
@@ -295,9 +336,12 @@ class Master(object):
             #Select the correct image
             image = self.universe.get_operator(operator_instance.operator_guid).get_image(architecture)
             k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image)
+            #Update operator instance
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
             operator_instance.update_image(image)
             operator_instance.update_state('running')
+            operator_instance.update_k8s_service(k8s_service)
+            operator_instance.update_k8s_job(k8s_job)
 
         return operator_instances
 
