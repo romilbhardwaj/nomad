@@ -194,6 +194,7 @@ class Master(object):
         else:
             self.profile_pipeline(pipeline_id)
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
+        logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
         logger.info("Pipeline %s schedule computed! Now instantiating.." % str(pipeline_id))
         operator_instances = self.instantiate_pipeline(pipeline_id)
@@ -268,10 +269,10 @@ class Master(object):
         :return: bool. Returns true if pipeline is ready for deployment false otherwise
         """
         measurements = {"cloud_execution_time", "output_msg_size"}
-        pipeline = self.universe.get_pipeline(pid)
+        pipeline = self.universe.get_pipeline(pid)c
         operator_guids = self.universe.get_pipeline(pid).operators
         profiling = self.get_pipeline_profiling(pid)
-        logger.info("Current pipeline profiling for pipeline %d: %s" % (pid, str(profiling)))
+        logger.info("Current pipeline profiling for pipeline %s: %s" % (pid, str(profiling)))
 
         #Check that all the operators have the desired measurements and that the pipeline has a valid schedule
         return (all(measurements.issubset(profiling[opid].keys()) for opid in operator_guids)

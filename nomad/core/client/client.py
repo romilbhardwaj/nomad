@@ -86,7 +86,7 @@ class NomadClient(object):
         def _submit_profiling_measurements(self, measurements):
 
             op_guid = self.op_inst_guid.split('-instance')[0]
-            logger.info('Submitting the following measurements for operator %d : %s' % (op_guid, str(measurements)))
+            logger.info('Submitting the following measurements for operator %s : %s' % (op_guid, str(measurements)))
             """
             Note: In order to update pipeline profiling we must use the operator guid, not op inst guid. 
                 If we allow multiple instances pr operator in the future, we must change the format of the profiling data.
