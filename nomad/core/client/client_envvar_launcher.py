@@ -20,6 +20,7 @@ def read_env_vars():
     is_final = os.getenv(ClientConfig.ENVVAR_IS_FINAL, False)
     is_first = os.getenv(ClientConfig.ENVVAR_IS_FIRST, False)
     debug = os.getenv(ClientConfig.ENVVAR_DEBUG, False)
+    pipeline_guid = os.environ[ClientConfig.ENVVAR_PIPELINE_GUID]
     if not isinstance(debug, bool):
         debug = str2bool(debug)
     if not isinstance(is_first, bool):
@@ -27,7 +28,7 @@ def read_env_vars():
     if not isinstance(is_final, bool):
         is_final = str2bool(is_final)
 
-    client_args = [guid, masterrpc]
+    client_args = [guid, masterrpc, pipeline_guid]
     client_kwargs = {'client_rpc_port': int(rpc_port),
                      'operator_path': str(operator_path),
                      'next_op_addr': str(next_op_addr),
