@@ -249,7 +249,7 @@ class Master(object):
     def wait_for_pipeline_profiling_completion(self, pid):
         max_time_seconds = 300
         start = time.time()
-        logger.info("Waiting for profiling completion (PID: %d)..." % pid)
+        logger.info("Waiting for profiling completion (PID: %s)..." % pid)
 
         """
         Alternative way of implementing this would be add a state attr to the pipeline obj
@@ -260,6 +260,7 @@ class Master(object):
 
         while(not self.pipeline_ready_for_deployment(pid)):
             time.sleep(2)
+            logger.info("Waiting for profiling completion (PID: %s)..." % pid)
 
     def pipeline_ready_for_deployment(self, pid):
         """
