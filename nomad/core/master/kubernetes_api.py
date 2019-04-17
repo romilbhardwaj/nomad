@@ -42,7 +42,7 @@ class KubernetesAPI(object):
         k8s_job = self.launch_kube_job(op_inst, image, namespace=namespace)
         return k8s_service, k8s_job
 
-    def delete_kube_service_and_job(self, guid, namespace='gandiva'):
+    def delete_kube_service_and_job(self, guid, namespace=KubernetesConfig.K8S_NAMESPACE):
         service_status = self.delete_kube_service(guid, namespace)
         job_status = self.delete_kube_job(guid, namespace)
         return service_status, job_status
