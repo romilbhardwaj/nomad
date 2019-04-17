@@ -19,6 +19,9 @@ class Operator:
     def get_op_inst_guid(self):
         return self.guid + "-instance" + str(len(self._op_instances))
 
+    def get_op_instances(self):
+        return self._op_instances
+
     def append_op_instance(self, op_inst_guid):
         self._op_instances.append(op_inst_guid)
 
@@ -70,6 +73,8 @@ class OperatorInstance(object):
         self.envs = None
         self.image = image #Docker image tag
         self.state = None
+        self.k8s_service = None
+        self.k8s_job = None
 
     def update_ip(self, client_ip):
         self.client_ip = client_ip
@@ -80,6 +85,12 @@ class OperatorInstance(object):
     def update_state(self, state):
         self.state = state
 
+    def update_k8s_service(self, service):
+        self.k8s_service = service
+
+    def update_k8s_job(self, job):
+        self.k8s_job = job
+
     def set_envs(self, master_rpc_address, client_rpc_port = ClientConfig.RPC_DEFAULT_PORT, debug=False):
         self.envs = {
             ClientConfig.ENVVAR_GUID: self.guid,
@@ -88,7 +99,8 @@ class OperatorInstance(object):
             ClientConfig.ENVVAR_OPERATORPATH: self.operator_path,
             ClientConfig.ENVVAR_IS_FIRST: self.is_first,
             ClientConfig.ENVVAR_IS_FINAL: self.is_final,
-            ClientConfig.ENVVAR_DEBUG: debug
+            ClientConfig.ENVVAR_DEBUG: debug,
+            ClientConfig.ENVVAR_PIPELINE_GUID: self.pipeline_guid
         }
 
     def get_envs(self):
