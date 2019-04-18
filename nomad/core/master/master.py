@@ -275,8 +275,10 @@ class Master(object):
         logger.info("Current pipeline profiling for pipeline %s: %s" % (pid, str(profiling)))
 
         #Check that all the operators have the desired measurements and that the pipeline has a valid schedule
+        #Check that values are not zero
         return (all(measurements.issubset(profiling[opid].keys()) for opid in operator_guids)
-                and pipeline.schedule != None)
+                and pipeline.schedule != None
+                and all(profiling[opid][m] for m in measurements for opid in operator_guids))
 
     def shutdown_pipeline(self, pid):
         #get opinstances.
