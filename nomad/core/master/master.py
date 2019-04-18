@@ -269,7 +269,7 @@ class Master(object):
         :return: bool. Returns true if pipeline is ready for deployment false otherwise
         """
         measurements = {"cloud_execution_time", "output_msg_size"}
-        pipeline = self.universe.get_pipeline(pid)c
+        pipeline = self.universe.get_pipeline(pid)
         operator_guids = self.universe.get_pipeline(pid).operators
         profiling = self.get_pipeline_profiling(pid)
         logger.info("Current pipeline profiling for pipeline %s: %s" % (pid, str(profiling)))
