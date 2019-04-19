@@ -94,8 +94,8 @@ class Master(object):
         methods_to_register = [self.receive_pipeline, self.register_client_onalive, self.get_next_op_address, self.update_pipeline_profiling,
                                self.update_node_profiling, self.update_network_profiling, self.get_node_profiling, self.get_network_profiling,
                                self.get_pipeline_profiling, self.get_nodes, self.get_last_output]
-
-        self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=False)
+        #TODO: Use multithreded
+        self.rpcserver = RPCServerThread(methods_to_register, self.master_rpc_port, multithreaded=True)
         self.rpcserver.start()  # Run RPC server in separate thread
 
         logger.info("Creating the scheduler object.")
@@ -177,7 +177,7 @@ class Master(object):
         self.universe.update_network_profiling(network_profiling_info)
 
     def submit_pipeline_profiling(self, pid, pipeline_profiling_info):
-        #TODO: check format of pipeline_profiling_info.
+        #TODO: check format of pipeline_profiling_info. If we have multiple operator instances we need to syncronize threads
         self.universe.update_pipeline_profiling(pid, pipeline_profiling_info)
 
     def submit_node_profiling(self, node_profile):
@@ -246,6 +246,7 @@ class Master(object):
 
         pipeline.schedule = {'latency': 0, 'placement': placement, 'distribution': distribution}
         self.instantiate_pipeline(pid)
+        #Todo: the master must wait for the pipeline to start running
 
     def wait_for_pipeline_profiling_completion(self, pid):
         max_time_seconds = 300
@@ -258,7 +259,7 @@ class Master(object):
         
         e.g: pipeline states: not_read_for_deployment, profiling, ready_for_deployment, deployed  
         """
-
+        #TODO: use condition to wait for pipeline to be ready for deployment.
         while(not self.pipeline_ready_for_deployment(pid)):
             time.sleep(2)
             logger.info("Waiting for profiling completion (PID: %s)..." % pid)
