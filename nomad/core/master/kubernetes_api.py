@@ -66,8 +66,9 @@ class KubernetesAPI(object):
         :param namespace:
         :return: Status object from the API
         '''
+        body = V1DeleteOptions(propagation_policy="Background")
         name = k8s_id + "-service"
-        status = self.kubecoreapi.delete_namespaced_service(name, namespace)
+        status = self.kubecoreapi.delete_namespaced_service(name, namespace, body)
         return status
 
     def delete_kube_job(self, k8s_id, namespace=KubernetesConfig.K8S_NAMESPACE):
