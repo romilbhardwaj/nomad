@@ -37,6 +37,9 @@ class Operator:
     def set_output_msg_size(self, s):
         self._output_msg_size = s
 
+    def remove_op_instances(self):
+        self._op_instances = []
+
     def get_image(self, arch):
         try:
             return self._fn_images[arch]
