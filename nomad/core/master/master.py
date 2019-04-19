@@ -219,8 +219,9 @@ class Master(object):
             self.create_pipeline_profiling_containers(pid)
             self.wait_for_pipeline_profiling_completion(pid)
             logger.info('* Pipeline profiling completed! *')
-            #shutdown_pipeline(pid)
+            self.shutdown_pipeline(pid)
             #Todo write pipeline profile to long term storage.
+            #TODO: Check that
             #return get_pipeline_pipeline_profiling
         else:
         #read from file
@@ -282,10 +283,24 @@ class Master(object):
                 and all(profiling[opid][m] for m in measurements for opid in operator_guids))
 
     def shutdown_pipeline(self, pid):
+        logger.info("Shutting down pipeline %s..." % pid)
         #get opinstances.
-        #remove kube service and job
-        #remove opinstances
-        pass
+        pipeline = self.universe.get_pipeline(pid)
+        operator_instance_guids = [self.universe.get_operator(op_guid)._op_instances[0] for op_guid in
+                                   pipeline.operators]
+
+        #remove kube service and job - shutdown op instance
+        for op_instance_guid in operator_instance_guids:
+            self.KubernetesAPI.delete_kube_service_and_job(guid=op_instance_guid)
+            #TODO Set op instance state to not running.
+
+        #remove op instances
+        for op_guid in pipeline.operators:
+            op = self.universe.get_operator(op_guid)
+            op.remove_op_instances()
+
+        #Remove schedule by setting schedule attr to None
+        pipeline.schedule = None
 
     def update_pipeline_profiling(self, pid, new_profile):
         self.submit_pipeline_profiling(pid, new_profile)
@@ -327,7 +342,7 @@ class Master(object):
         operator_instance_guids = [self.universe.get_operator(op_guid)._op_instances[0] for op_guid in pipeline.operators]
         operator_instances = [self.universe.get_operator_instance(guid) for guid in operator_instance_guids]
 
-        # Check if pipeline is already instantiated.
+        # Check if pipeline is already instantiated. TODO: do this before we create operator instances?
         if any([opinst.state == 'running' for opinst in operator_instances]):
             logger.exception("Operator instances already running")
             raise Exception("Pipeline already instantiated")
