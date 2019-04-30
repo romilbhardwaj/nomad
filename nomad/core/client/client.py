@@ -5,7 +5,7 @@ import xmlrpc
 import time
 import sys
 from queue import Queue
-
+from pympler.asizeof import asizeof
 import pickle
 from nomad.core.config import CONSTANTS
 from nomad.core.types.message import Message
@@ -81,7 +81,8 @@ class NomadClient(object):
                 logger.info("Operator result = %.10s (truncated), time taken = %f. Current out queue size = %d" % (output_message, (op_end_time - op_start_time), self.outgoing_queue.qsize()))
 
                 #Submit Profiling data. TODO: Update message size. Add mechanism to controll rate of profiling.
-                self._submit_profiling_measurements({'cloud_execution_time': op_end_time - op_start_time, 'output_msg_size': 1})
+                msg_size = asizeof(op_result)
+                self._submit_profiling_measurements({'cloud_execution_time': op_end_time - op_start_time, 'output_msg_size': msg_size})
 
         def _submit_profiling_measurements(self, measurements):
 
