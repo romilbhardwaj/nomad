@@ -194,7 +194,6 @@ class Master(object):
         else:
             self.profile_pipeline(pipeline_id)
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
-        logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
         logger.info("Pipeline %s schedule computed! Now instantiating.." % str(pipeline_id))
         operator_instances = self.instantiate_pipeline(pipeline_id)
