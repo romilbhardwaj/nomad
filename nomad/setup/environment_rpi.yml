@@ -10,3 +10,4 @@ dependencies:
     - pillow==5.3.0
     - kubernetes==8.0.0b1
     - networkx==2.2
+    - pympler
