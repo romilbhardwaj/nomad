@@ -22,7 +22,7 @@ kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl versio
 ### Setup RaspberryPi
 ```bash
 # The output from kubeadm init above
-kubeadm join 10.42.0.1:6443 --token l3y4gc.j4vcuf62ur3q3ma2 --discovery-token-ca-cert-hash sha256:209cf90d686d2c7a447ef5e828525188b9ddc34268f2c03c0672f51b26c1cafc
+sudo kubeadm join 10.42.0.1:6443 --token l3y4gc.j4vcuf62ur3q3ma2 --discovery-token-ca-cert-hash sha256:209cf90d686d2c7a447ef5e828525188b9ddc34268f2c03c0672f51b26c1cafc
 ```
 
 If you get x509 errors, update the time on your RaspberryPi
