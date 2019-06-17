@@ -80,7 +80,7 @@ class NomadClient(object):
                     self.outgoing_queue.put(output_message)
                 logger.info("Operator result = %.10s (truncated), time taken = %f. Current out queue size = %d" % (output_message, (op_end_time - op_start_time), self.outgoing_queue.qsize()))
 
-                #Submit Profiling data. TODO: Update message size. Add mechanism to controll rate of profiling.
+                #Submit Profiling data. TODO: Add mechanism to controll rate of profiling.
                 msg_size = asizeof(op_result)
                 self._submit_profiling_measurements({'cloud_execution_time': op_end_time - op_start_time, 'output_msg_size': msg_size})
 
