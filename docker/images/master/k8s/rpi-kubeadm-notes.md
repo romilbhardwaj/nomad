@@ -2,7 +2,7 @@
 First install kubeadm on the RPis and your machine.
 https://kubernetes.io/docs/setup/independent/install-kubeadm/
 ```bash
-sudo apt-get install -y kubelet=1.13.0-00 kubeadm=1.13.0-00 kubectl=1.13.0-00 kubernetes-cni=0.6.0-0
+sudo apt-get install -y kubelet=1.13.0-00 kubeadm=1.13.0-00 kubectl=1.13.0-00 kubernetes-cni=0.6.0-00
 ```
 
 Then run kubeadm to initialize master
