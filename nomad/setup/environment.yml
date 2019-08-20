@@ -10,3 +10,4 @@ dependencies:
     - kubernetes==8.0.0b1
     - networkx==2.2
     - docker
+    - pympler

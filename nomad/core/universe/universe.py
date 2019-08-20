@@ -41,8 +41,9 @@ class Universe(object):
 
         #create operators
         operators = []
-        for i, fn in enumerate(images):
-            if i == len(images) - 1:
+        last_op = max(images.keys())
+        for i in images.keys():
+            if i == last_op:
                 next_op_id = None
             else:
                 next_op_id = pid + "-" + str(i+1)
@@ -57,7 +58,8 @@ class Universe(object):
             if i == (len(images) - 1):
                 logger.info("Hit is final!")
                 is_final = True
-            op = Operator(fn_image=fn, guid=op_id, is_final=is_final, is_first=is_first)
+
+            op = Operator(fn_images=images[i], guid=op_id, is_final=is_final, is_first=is_first)
             op._next = next_op_id
             operators.append(op_id)
             self.operators[op_id] = op

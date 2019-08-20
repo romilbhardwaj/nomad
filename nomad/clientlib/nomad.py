@@ -2,6 +2,7 @@ import cloudpickle
 import xmlrpc.client
 
 def submit_pipeline(ops, start, end, pipeline_id, master_conn_str, profile=None):
+    #TODO: pipeline_id should be an optional argument
     '''
     Submits a pipeline to the Nomad master and instantiates the pipeline in the nomad cluster.
     :param ops: List of functions which compose the pipeline. The ordering of this list defines the ordering of the operators.
@@ -54,6 +55,7 @@ def submit_pipeline(ops, start, end, pipeline_id, master_conn_str, profile=None)
     return op_guids
 
 def update_pipeline_profiling(pid, pipeline_profile, master_ip):
+    #TODO: Check that the format is valid
     """
     :param pid:
     :param pipeline_profile: dictionary of the form {'pid-i': {'cloud_execution_time':float, 'output_msg_size': float} },
@@ -74,6 +76,7 @@ def update_node_profiling(node_profile, master_ip):
     server.update_node_profiling(node_profile)
 
 def update_network_profiling(network_profile, master_ip):
+    #TODO: check that the format is valid
     '''
     :param network_profile: list of dictionaries [{'from':sting(node_id), 'to':sting(node_id), 'bandwidth':float,
     'latency':float}, ... ]

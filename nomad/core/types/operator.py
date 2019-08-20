@@ -5,10 +5,10 @@ from nomad.core.utils.helpers import construct_xmlrpc_addr
 
 
 class Operator:
-    def __init__(self, guid, l='', fn_image='', t=0, s=0, is_first=False, is_final=False):
+    def __init__(self, guid, l='', fn_images=None, t=0, s=0, is_first=False, is_final=False):
         self.guid = guid
         self._label = l #Name of operator
-        self._fn_image = fn_image
+        self._fn_images = fn_images # dictionary mapping arch -> image string
         self._cloud_execution_time = t #Time to execute the operator in a cloud environment on a typical workload. Measured in seconds
         self._output_msg_size = s # Size of operator output in bytes assuming a typical input.
         self._next = None # GUID of next op in pipeline
@@ -18,6 +18,9 @@ class Operator:
 
     def get_op_inst_guid(self):
         return self.guid + "-instance" + str(len(self._op_instances))
+
+    def get_op_instances(self):
+        return self._op_instances
 
     def append_op_instance(self, op_inst_guid):
         self._op_instances.append(op_inst_guid)
@@ -34,8 +37,18 @@ class Operator:
     def set_output_msg_size(self, s):
         self._output_msg_size = s
 
+    def remove_op_instances(self):
+        self._op_instances = []
+
+    def get_image(self, arch):
+        try:
+            return self._fn_images[arch]
+
+        except KeyError:
+            raise Exception("Unknown architecture %s" % str(arch))
+
 class OperatorInstance(object):
-    def __init__(self, guid, pipeline_guid, operator_guid, node_id=None, client_ip=None, operator_path=None, is_first=False, is_final=False):
+    def __init__(self, guid, pipeline_guid, operator_guid, node_id=None, client_ip=None, operator_path=None, is_first=False, is_final=False, image=None):
         '''
         Defines an operator instance running on the network. Associated with an operator and a pipeline.
         :param guid: GUID, typically of the form <pipeline_guid>-<operator_guid>-<instance_guid>
@@ -61,9 +74,25 @@ class OperatorInstance(object):
         self.is_first = is_first
         self.is_final = is_final
         self.envs = None
+        self.image = image #Docker image tag
+        self.state = None
+        self.k8s_service = None
+        self.k8s_job = None
 
     def update_ip(self, client_ip):
         self.client_ip = client_ip
+
+    def update_image(self, image_tag):
+        self.image = image_tag
+
+    def update_state(self, state):
+        self.state = state
+
+    def update_k8s_service(self, service):
+        self.k8s_service = service
+
+    def update_k8s_job(self, job):
+        self.k8s_job = job
 
     def set_envs(self, master_rpc_address, client_rpc_port = ClientConfig.RPC_DEFAULT_PORT, debug=False):
         self.envs = {
@@ -73,7 +102,8 @@ class OperatorInstance(object):
             ClientConfig.ENVVAR_OPERATORPATH: self.operator_path,
             ClientConfig.ENVVAR_IS_FIRST: self.is_first,
             ClientConfig.ENVVAR_IS_FINAL: self.is_final,
-            ClientConfig.ENVVAR_DEBUG: debug
+            ClientConfig.ENVVAR_DEBUG: debug,
+            ClientConfig.ENVVAR_PIPELINE_GUID: self.pipeline_guid
         }
 
     def get_envs(self):

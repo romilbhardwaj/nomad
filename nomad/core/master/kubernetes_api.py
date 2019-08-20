@@ -37,22 +37,12 @@ class KubernetesAPI(object):
 
 
     def create_kube_service_and_job(self, op_inst, ports=[["nomadmaster", 31000, 31000], ["nomadclient", 30000, 30000],
-                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, image=None, architecture=Architectures.x86):
+                                                          ["ssh", 22, 22]], namespace=KubernetesConfig.K8S_NAMESPACE, image=None):
         k8s_service = self.launch_kube_service(op_inst, ports, namespace)
-
-        # TODO: Use multiple arch images.
-        '''
-        if architecture == Architectures.x86:
-            image = ClientDockerImages.x86
-        elif architecture == Architectures.rpiarm:
-            image = ClientDockerImages.rpiarm
-        else:
-            raise Exception("Unknown architecture %s" % str(architecture))
-        '''
         k8s_job = self.launch_kube_job(op_inst, image, namespace=namespace)
         return k8s_service, k8s_job
 
-    def delete_kube_service_and_job(self, guid, namespace='gandiva'):
+    def delete_kube_service_and_job(self, guid, namespace=KubernetesConfig.K8S_NAMESPACE):
         service_status = self.delete_kube_service(guid, namespace)
         job_status = self.delete_kube_job(guid, namespace)
         return service_status, job_status
@@ -76,8 +66,9 @@ class KubernetesAPI(object):
         :param namespace:
         :return: Status object from the API
         '''
+        body = V1DeleteOptions(propagation_policy="Background")
         name = k8s_id + "-service"
-        status = self.kubecoreapi.delete_namespaced_service(name, namespace)
+        status = self.kubecoreapi.delete_namespaced_service(name, namespace, body)
         return status
 
     def delete_kube_job(self, k8s_id, namespace=KubernetesConfig.K8S_NAMESPACE):

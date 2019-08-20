@@ -5,7 +5,7 @@ import xmlrpc
 import time
 import sys
 from queue import Queue
-
+from pympler.asizeof import asizeof
 import pickle
 from nomad.core.config import CONSTANTS
 from nomad.core.types.message import Message
@@ -41,15 +41,18 @@ sys.stderr = LoggerWriter(logger.warning)
 class NomadClient(object):
     last_output = None
     class OperatorThread(threading.Thread):
-        def __init__(self, incoming_queue, outgoing_queue, operator_func, is_first_operator, is_final_operator):
+        def __init__(self, incoming_queue, outgoing_queue, operator_func, is_first_operator, is_final_operator, op_inst_guid, pid,
+                     master_rpc_proxy):
             threading.Thread.__init__(self)
             self.daemon = False
-
             self.incoming_queue = incoming_queue
             self.outgoing_queue = outgoing_queue
             self.operator_func = operator_func
             self.is_first_operator = is_first_operator
             self.is_final_operator = is_final_operator
+            self.master_rpc_proxy = master_rpc_proxy
+            self.pid = pid
+            self.op_inst_guid = op_inst_guid
 
         def work(self):
             global last_output
@@ -77,8 +80,24 @@ class NomadClient(object):
                     self.outgoing_queue.put(output_message)
                 logger.info("Operator result = %.10s (truncated), time taken = %f. Current out queue size = %d" % (output_message, (op_end_time - op_start_time), self.outgoing_queue.qsize()))
 
+                #Submit Profiling data. TODO: Add mechanism to controll rate of profiling.
+                msg_size = asizeof(op_result)
+                self._submit_profiling_measurements({'cloud_execution_time': op_end_time - op_start_time, 'output_msg_size': msg_size})
+
+        def _submit_profiling_measurements(self, measurements):
+
+            op_guid = self.op_inst_guid.split('-instance')[0]
+            logger.info('Submitting the following measurements for operator %s : %s' % (op_guid, str(measurements)))
+            """
+            Note: In order to update pipeline profiling we must use the operator guid, not op inst guid. 
+                If we allow multiple instances pr operator in the future, we must change the format of the profiling data.
+            For instance, we could average data across all instances. 
+            """
+            self.master_rpc_proxy.update_pipeline_profiling(self.pid, {op_guid:measurements})
+
         def run(self):
             self.work()
+
 
     class ForwardingThread(threading.Thread):
         def __init__(self, outgoing_queue, next_operator_rpc_uri, is_final_operator):
@@ -120,7 +139,7 @@ class NomadClient(object):
             else:
                 logger.info("This is the final operator, thus not launching the forwarding thread.")
 
-    def __init__(self, guid, master_rpc_uri, operator_path=None, client_rpc_port=None, next_op_addr=None,
+    def __init__(self, guid, master_rpc_uri, pid, operator_path=None, client_rpc_port=None, next_op_addr=None,
                  is_first_operator=False, is_final_operator=False, debug=False):
         '''
         :param guid: GUID for this client
@@ -137,6 +156,7 @@ class NomadClient(object):
         logger.info("Instantiating client")
         self.guid = guid
         self.master_rpc_uri = master_rpc_uri
+        self.pid = pid
         if operator_path is None:
             self.operator_path = ClientConfig.DEAFULT_OPERATOR_PATH
         else:
@@ -200,7 +220,7 @@ class NomadClient(object):
         # Start threads.
         logger.info("Launching opreator thread.")
         self.opreator_thread = self.OperatorThread(self.incoming_queue, self.outgoing_queue, self.operator_func,
-                                                   self.is_first_operator, self.is_final_operator)
+                                                   self.is_first_operator, self.is_final_operator, self.guid, self.pid, self.master_rpc_proxy)
         self.opreator_thread.start()
 
         logger.info("Launching forwarding thread with next_operator_addr: %s" % str(self.next_op_addr))
