@@ -1,4 +1,6 @@
 import os
+from os.path import expanduser
+import platform
 import logging
 import threading
 from multiprocessing import Process
@@ -6,13 +8,14 @@ import time
 import sys
 import json
 import docker
+from collections import defaultdict
 import shutil
 from nomad.core.config import CONSTANTS, ClientConfig, DockerConfig
 from nomad.core.master.kubernetes_api import KubernetesAPI
 from nomad.core.placement.minlatsolver import RecMinLatencySolver
 from nomad.core.scheduler.KubernetesScheduler import KubernetesScheduler
 from nomad.core.universe.universe import Universe
-
+from nomad.core.graph.node import Architectures
 from nomad.core.utils.LoggerWriter import LoggerWriter
 from nomad.core.utils.RPCServerThreads import RPCServerThread
 import nomad.core.config.MasterConfig as MasterConfig
@@ -26,8 +29,14 @@ logger = logging.getLogger()
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] [%(name)-4s] %(message)s")
 
 # Setup logging to file
-os.makedirs(MasterConfig.DEFAULT_LOG_DIR, mode=0o755, exist_ok=True)
-fileHandler = logging.FileHandler("{0}/{1}".format(MasterConfig.DEFAULT_LOG_DIR, MasterConfig.MASTER_LOG_FILE_NAME))
+if platform.system() == 'Darwin':
+    #OS X
+    os.makedirs(expanduser("~") + '/nomad/logs', mode=0o755, exist_ok=True)
+    fileHandler = logging.FileHandler("{0}/{1}".format(expanduser("~") + '/nomad/logs', MasterConfig.MASTER_LOG_FILE_NAME))
+else:
+    os.makedirs(MasterConfig.DEFAULT_LOG_DIR, mode=0o755, exist_ok=True)
+    fileHandler = logging.FileHandler("{0}/{1}".format(MasterConfig.DEFAULT_LOG_DIR, MasterConfig.MASTER_LOG_FILE_NAME))
+
 fileHandler.setFormatter(logFormatter)
 logger.addHandler(fileHandler)
 
@@ -180,7 +189,7 @@ class Master(object):
         pipeline_id = self.universe.add_pipeline(images, start, end, pipeline_id)
         logger.info("Pipeline %s added to universe, now profiling." % str(pipeline_id))
         pipeline_profiling_info = (profile if profile
-                                   else self.profile_pipeline(self.universe.get_pipeline(pipeline_id)))
+                                   else self.profile_pipeline(pipeline_id))
         self.submit_pipeline_profiling(pipeline_id, pipeline_profiling_info)
         logger.info("Pipeline %s profiling complete - scheduling now." % str(pipeline_id))
         self.schedule(pipeline_id)
@@ -207,15 +216,28 @@ class Master(object):
             logger.info("Setting env for operator_instance %s" % op_inst.guid)
             op_inst.set_envs(construct_xmlrpc_addr(self.ip_address, self.master_rpc_port))
 
-    def profile_pipeline(self, pipeline):
-        #create_pipeline_profiling_containers()
-        #wait_for_pipeline_profiling_completion()
-
+    def profile_pipeline(self, pid):
+        #self.create_pipeline_profiling_containers(pid)
+        #self.wait_for_pipeline_profiling_completion(pid)
+        #tear_down_pipeline()
+        #return get_pipeline_pipeline_profiling
         #read from file
         profiling_info_file = open('/nomad/nomad/tests/core/master/pipeline_test.json')
         profiling_info = json.load(profiling_info_file)
         profiling_info_file.close()
         return profiling_info
+
+    def create_pipeline_profiling_containers(self, pid):
+        """
+        Instantiates pipeline for profiling.
+        Schedule: [start, profiling_node, ... , profiling_node, end]
+        :param pipeline:
+        :return:
+        """
+        #pipeline = self.universe.get_pipeline(pid)
+
+        #schedule = [pipeline.start_node]
+        pass
 
     def update_pipeline_profiling(self, pid, new_profile):
         self.submit_pipeline_profiling(pid, new_profile)
@@ -245,9 +267,13 @@ class Master(object):
         operator_instances.reverse()
         for operator_instance in operator_instances:
             node = self.universe.get_node(operator_instance.node_id)
-            image = self.universe.get_operator(operator_instance.operator_guid)._fn_image
-            k8s_service, k8s_job = self.KubernetesAPI.create_kube_service_and_job(operator_instance, image=image, architecture=node._architecture)
+            #TODO: select image based on node arch
+            images = self.universe.get_operator(operator_instance.operator_guid)._fn_images
+            k8s_service, k8s_job, image = self.KubernetesAPI.create_kube_service_and_job(operator_instance, images=images, architecture=node._architecture)
+            #TODO: update image running in operator instance.
             operator_instance.update_ip(k8s_service.spec.cluster_ip)    # update the ip from kubernetes
+            operator_instance.update_image(image)
+
         return operator_instances
 
 
@@ -257,18 +283,20 @@ class Master(object):
             with open(path, 'wb') as f:
                 f.write(binary_obj.data)
 
-        def build_op_image(opid, pid, pickle):
-            build_src_path = '/tmp/op_%d/' % opid
+        def build_op_image(opid, pid, arch, pickle):
+            build_src_path = '/tmp/%s/op_%d/' % (arch, opid)
             if not os.path.exists(build_src_path):
-                os.mkdir(build_src_path)
-            shutil.copy('/nomad/images/client/Dockerfile.operator', build_src_path + 'Dockerfile')
+                os.makedirs(build_src_path)
+            shutil.copy('/nomad/images/client/Dockerfile.operator.%s' % arch, build_src_path + 'Dockerfile')
             file_name = build_src_path + 'operator.pickle'
 
             # Save pickle
             write_to_file(pickle, file_name)
 
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
-            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
+            tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, opid, arch)
+            #TODO: figure out how to specify arch in build process. currently arch is assigned based on ther arch of
+            # the host running the docker daemon
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
@@ -279,16 +307,18 @@ class Master(object):
                                                                           'password': DockerConfig.PASSWORD})
         #create client
         client = docker.from_env()
-        images = []
+        images = defaultdict(dict)
         processes = []
         start_time = time.time()
         for i, op_pickle in enumerate(ops):
-            # TODO: Build multiple arch images
             # TODO: Should we use a process pool instead of spawning a new process for each image?
-            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
-            images.append(tag)
-            p = Process(target=build_op_image, args=(i, pid, op_pickle))
-            processes.append(p)
+            for arch in Architectures.SUPPORTED:
+                tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, i, arch)
+                #Note: we are storing the image tag before we know that the build succeeded.
+                #If the image build fails, k8s will fail to launch the corresponding container.
+                images[i][arch] = tag
+                p = Process(target=build_op_image, args=(i, pid, arch, op_pickle))
+                processes.append(p)
 
         for p in processes:
             p.start()

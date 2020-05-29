@@ -1,6 +1,16 @@
 class Architectures:
     x86 = 'x86'
     rpiarm = 'rpiarm'
+    SUPPORTED =[x86, rpiarm]
+
+    @classmethod
+    def get_operator_img_tag(cls, repo, pid, opid, arch):
+        if arch in cls.SUPPORTED:
+            return '%s/operators:%s_op_%d_%s' % (repo, pid, opid, arch)
+        else:
+            #Todo: create ArchNotSupportedError()
+            raise Exception('Architecture %s not supported' % arch)
+
 
 class Node:
     def __init__(self, label, C=0, architecture=''):
