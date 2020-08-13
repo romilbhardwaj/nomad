@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nomadmaster-deployment
+  namespace: nomad
+spec:
+  selector:
+    matchLabels:
+      app: nomadmaster
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        app: nomadmaster
+    spec:
+      containers:
+      - name: nomadmaster
+        image: lab11nomad/master:test
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-sock-volume
+        ports:
+        - containerPort: 31000
+        - containerPort: 30000
+        env:
+        - name: USE_INCLUSTER_AUTH
+          value: "True"
+      volumes:
+      - name: docker-sock-volume
+        hostPath:
+          path: /var/run/docker.sock
+          type: File

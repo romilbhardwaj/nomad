@@ -1,4 +1,6 @@
 import os
+from os.path import expanduser
+import platform
 import logging
 import threading
 from multiprocessing import Process
@@ -12,7 +14,7 @@ from nomad.core.master.kubernetes_api import KubernetesAPI
 from nomad.core.placement.minlatsolver import RecMinLatencySolver
 from nomad.core.scheduler.KubernetesScheduler import KubernetesScheduler
 from nomad.core.universe.universe import Universe
-
+from nomad.core.graph.node import Architectures
 from nomad.core.utils.LoggerWriter import LoggerWriter
 from nomad.core.utils.RPCServerThreads import RPCServerThread
 import nomad.core.config.MasterConfig as MasterConfig
@@ -26,8 +28,14 @@ logger = logging.getLogger()
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] [%(name)-4s] %(message)s")
 
 # Setup logging to file
-os.makedirs(MasterConfig.DEFAULT_LOG_DIR, mode=0o755, exist_ok=True)
-fileHandler = logging.FileHandler("{0}/{1}".format(MasterConfig.DEFAULT_LOG_DIR, MasterConfig.MASTER_LOG_FILE_NAME))
+if platform.system() == 'Darwin':
+    #OS X
+    os.makedirs(expanduser("~") + '/nomad/logs', mode=0o755, exist_ok=True)
+    fileHandler = logging.FileHandler("{0}/{1}".format(expanduser("~") + '/nomad/logs', MasterConfig.MASTER_LOG_FILE_NAME))
+else:
+    os.makedirs(MasterConfig.DEFAULT_LOG_DIR, mode=0o755, exist_ok=True)
+    fileHandler = logging.FileHandler("{0}/{1}".format(MasterConfig.DEFAULT_LOG_DIR, MasterConfig.MASTER_LOG_FILE_NAME))
+
 fileHandler.setFormatter(logFormatter)
 logger.addHandler(fileHandler)
 
@@ -257,18 +265,18 @@ class Master(object):
             with open(path, 'wb') as f:
                 f.write(binary_obj.data)
 
-        def build_op_image(opid, pid, pickle):
-            build_src_path = '/tmp/op_%d/' % opid
+        def build_op_image(opid, pid, arch, pickle):
+            build_src_path = '/tmp/%s/op_%d/' % (arch, opid)
             if not os.path.exists(build_src_path):
-                os.mkdir(build_src_path)
-            shutil.copy('/nomad/images/client/Dockerfile.operator', build_src_path + 'Dockerfile')
+                os.makedirs(build_src_path)
+            shutil.copy('/nomad/images/client/Dockerfile.operator.%s' % arch, build_src_path + 'Dockerfile')
             file_name = build_src_path + 'operator.pickle'
 
             # Save pickle
             write_to_file(pickle, file_name)
 
             pickle_rel_path = os.path.relpath(file_name, build_src_path)
-            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, opid)
+            tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, opid, arch)
             docker_image, build_log = client.images.build(tag=tag, path=build_src_path,
                                                           buildargs={'PYTHON_PICKLE_PATH': pickle_rel_path}, rm=True, pull=True)
             logger.debug("Build result: \n%s" % str(docker_image))
@@ -285,10 +293,11 @@ class Master(object):
         for i, op_pickle in enumerate(ops):
             # TODO: Build multiple arch images
             # TODO: Should we use a process pool instead of spawning a new process for each image?
-            tag = "lab11nomad/operators:%s_op_%d_img" % (pid, i)
-            images.append(tag)
-            p = Process(target=build_op_image, args=(i, pid, op_pickle))
-            processes.append(p)
+            for arch in Architectures.SUPPORTED:
+                tag = Architectures.get_operator_img_tag(MasterConfig.DEFAULT_DOCKER_HUB_REPO, pid, i, arch)
+                images.append(tag)
+                p = Process(target=build_op_image, args=(i, pid, arch, op_pickle))
+                processes.append(p)
 
         for p in processes:
             p.start()
